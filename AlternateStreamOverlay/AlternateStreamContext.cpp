@@ -216,20 +216,8 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 		RECT rc;
 		GetClientRect(hWnd, &rc);
 
-		HWND hList = CreateWindowExW(
-			WS_EX_CLIENTEDGE,
-			WC_LISTVIEWW,                 // "SysListView32"
-			nullptr,
-			WS_CHILD | WS_VISIBLE | WS_TABSTOP |
-			LVS_REPORT | LVS_SINGLESEL,
-			12, 70,                         // x, y
-			rc.right - 24,                 // width
-			rc.top + 200,                // height
-			hWnd,                          // parent = dialog
-			(HMENU)NULL,               // control ID
-			GetModuleHandleW(nullptr),     // hInstance
-			nullptr
-		);
+		HWND hList = GetDlgItem(hWnd, IDC_LIST);
+		MoveWindow(hList, 12, 30, (rc.right - rc.left) - 24, rc.top + 200, TRUE);
 
 		ListView_SetExtendedListViewStyle(
 			hList,

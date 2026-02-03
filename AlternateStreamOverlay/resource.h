@@ -17,6 +17,10 @@
 #define IDC_BTN_ADD                     209
 #define IDC_SCROLLBAR1                  210
 #define IDC_BTN_DEL                     211
+#define IDC_LIST                        212
+#define IDC_COMBOBOXEX1                 213
+#define IDC_BUTTON1                     214
+#define IDC_BTN_SAVE                    214
 
 // Next default values for new objects
 // 
@@ -24,7 +28,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        203
 #define _APS_NEXT_COMMAND_VALUE         32768
-#define _APS_NEXT_CONTROL_VALUE         212
+#define _APS_NEXT_CONTROL_VALUE         215
 #define _APS_NEXT_SYMED_VALUE           104
 #endif
 #endif

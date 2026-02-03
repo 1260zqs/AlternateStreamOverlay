@@ -196,15 +196,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	SetWindowLong(hWnd, GWL_USERDATA, (LONG)pthis);
 #endif
 
-	HWND comboBox = GetDlgItem(hWnd, IDC_COMBO1);
-	HWND checkBox = GetDlgItem(hWnd, IDC_CHECK1);
-	HWND textBox = GetDlgItem(hWnd, IDC_EDIT1);
-
 	const std::vector<std::wstring> & streams = pthis->get_streams();
-	for (std::vector<std::wstring>::const_iterator vit = streams.begin(); vit != streams.end(); ++vit)
-	{
-		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)vit->c_str());
-	}
 
 	{
 		INITCOMMONCONTROLSEX icc = {
@@ -217,7 +209,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 		GetClientRect(hWnd, &rc);
 
 		HWND hList = GetDlgItem(hWnd, IDC_LIST);
-		MoveWindow(hList, 12, 30, (rc.right - rc.left) - 24, rc.top + 200, TRUE);
+		//MoveWindow(hList, 12, 30, (rc.right - rc.left) - 24, rc.top + 200, TRUE);
 
 		ListView_SetExtendedListViewStyle(
 			hList,
@@ -260,11 +252,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	HFONT font = CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
 		CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, L"Courier New");
 	pthis->attach_font_resource(font);
-	SendMessage(textBox, WM_SETFONT, (WPARAM)font, MAKELPARAM(TRUE,0)); 
 
-	SendMessage(comboBox, CB_SETCURSEL, 0, 0);
-	SendMessage(checkBox, BM_SETCHECK, 0, 0);
-	SelectText(pthis, 0, false, textBox);
 	return FALSE; 
 }
 
@@ -317,35 +305,10 @@ DLGRETURN CALLBACK PropPageDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 	}
 	case WM_COMMAND:
 		{
-			HWND comboBox = GetDlgItem(hWnd, IDC_COMBO1);
-			HWND checkBox = GetDlgItem(hWnd, IDC_CHECK1);
-			HWND textBox = GetDlgItem(hWnd, IDC_EDIT1);
-
 			int wmid = LOWORD(wParam);
 			int wmEvent = HIWORD(wParam);
 			switch (wmid)
 			{
-			case IDC_COMBO1:
-				if (wmEvent == CBN_SELCHANGE)
-				{ // sue me ;)
-			case IDC_CHECK1: 
-				{
-					
-#ifdef _WIN64
-					long lUserData  = (long)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-#else
-					long lUserData = (long)GetWindowLong(hWnd, GWL_USERDATA);
-#endif
-					CAlternateStreamContext *pthis = reinterpret_cast<CAlternateStreamContext*>(lUserData);
-					LRESULT idx = SendMessage(comboBox, CB_GETCURSEL, 0,0);
-					bool checked = (SendMessage(checkBox, BM_GETCHECK, 0, 0) == BST_CHECKED);
-					if (idx >= 0)
-					{
-						SelectText(pthis, (size_t)idx, checked, textBox);
-					}
-				}
-				}
-				break;
 			case IDC_BTN_DEL:
 				if (wmEvent == BN_CLICKED)
 				{

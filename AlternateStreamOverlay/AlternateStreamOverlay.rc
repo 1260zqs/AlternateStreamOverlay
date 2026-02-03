@@ -16,7 +16,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// Ó¢Óï(ÃÀ¹ú) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -108,13 +108,11 @@ STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Streams"
 FONT 9, "Segoe UI", 400, 0, 0x0
 BEGIN
-    COMBOBOX        IDC_COMBO1,7,7,168,67,CBS_DROPDOWNLIST | CBS_SORT | NOT WS_VISIBLE | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Show as hex",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | NOT WS_VISIBLE | WS_TABSTOP,186,7,59,10
-    EDITTEXT        IDC_EDIT1,7,22,70,33,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_VISIBLE | WS_VSCROLL
-    PUSHBUTTON      "Add",IDC_BTN_ADD,138,126,50,16
-    PUSHBUTTON      "Delete",IDC_BTN_DEL,198,126,50,16
-    PUSHBUTTON      "Save",IDC_BTN_SAVE,78,126,50,16
-    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,30,238,80
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,40,246,247
+    PUSHBUTTON      "Add",IDC_BTN_ADD,148,291,50,16
+    PUSHBUTTON      "Delete",IDC_BTN_DEL,203,291,50,16
+    PUSHBUTTON      "Save",IDC_BTN_SAVE,93,291,50,16
+    PUSHBUTTON      "Open",IDC_BTN_OPEN,38,291,50,16
 END
 
 
@@ -129,7 +127,7 @@ BEGIN
     IDD_PROPPAGE_MEDIUM, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 245
+        RIGHTMARGIN, 253
         TOPMARGIN, 7
         BOTTOMMARGIN, 330
     END
@@ -158,12 +156,12 @@ BEGIN
     IDS_PROJNAME            "AlternateStreamOverlay"
 END
 
-#endif    // Ó¢Óï(ÃÀ¹ú) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// Ó¢Óï(Ó¢¹ú) resources
+// English (United Kingdom) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
@@ -188,7 +186,7 @@ IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "ASO.ico"
 
-#endif    // Ó¢Óï(Ó¢¹ú) resources
+#endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

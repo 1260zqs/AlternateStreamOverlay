@@ -235,7 +235,7 @@ tskill explorer</Command>
     </PreBuildEvent>
     <PostBuildEvent>
       <Command>regsvr32 /s $(SolutionDir)$(ProjectName)\$(LibrariesArchitecture)\$(Configuration)\AlternateStreamOverlay_64.dll
-explorer /select,c:\appverifUI.dll</Command>
+explorer /select,c:\rfs.dat</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

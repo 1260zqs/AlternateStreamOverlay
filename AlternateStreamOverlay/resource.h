@@ -8,19 +8,12 @@
 #define IDR_ALTERNATESTREAMCONTEXT      103
 #define IDD_PROPPAGE_MEDIUM             106
 #define IDI_ICON1                       201
-#define IDC_COMBO1                      201
-#define IDC_CHECK1                      202
-#define IDC_EDIT1                       203
-#define IDC_LIST1                       204
-#define IDC_MFCSHELLLIST1               206
-#define IDC_LIST3                       207
 #define IDC_BTN_ADD                     209
-#define IDC_SCROLLBAR1                  210
 #define IDC_BTN_DEL                     211
 #define IDC_LIST                        212
 #define IDC_COMBOBOXEX1                 213
-#define IDC_BUTTON1                     214
 #define IDC_BTN_SAVE                    214
+#define IDC_BTN_OPEN                    215
 
 // Next default values for new objects
 // 

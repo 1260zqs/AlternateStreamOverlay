@@ -1,0 +1,41 @@
+HKCR
+{
+	NoRemove s '*'
+	{
+		NoRemove ShellEx
+		{
+			NoRemove ContextMenuHandlers
+			{
+				ForceRemove AlternateStreams = s '{4A26024B-5499-45BE-A23F-4A65E88888D0}'
+			}
+			NoRemove PropertySheetHandlers
+			{
+				{4A26024B-5499-45BE-A23F-4A65E88888D0}
+			}
+		}
+	}
+	NoRemove s Directory
+	{
+		NoRemove ShellEx
+		{
+			NoRemove ContextMenuHandlers
+			{
+				ForceRemove AlternateStreams = s '{4A26024B-5499-45BE-A23F-4A65E88888D0}'
+			}
+			NoRemove PropertySheetHandlers
+			{
+				{4A26024B-5499-45BE-A23F-4A65E88888D0}
+			}
+		}
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {4A26024B-5499-45BE-A23F-4A65E88888D0} = s 'AlternateStreamContext Class'
+		{
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Both'
+			}
+		}
+	}
+}

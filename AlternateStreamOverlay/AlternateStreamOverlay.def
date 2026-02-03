@@ -1,0 +1,10 @@
+; AlternateStreamOverlay.def : Declares the module parameters.
+
+LIBRARY      "AlternateStreamOverlay.DLL"
+
+EXPORTS
+	DllCanUnloadNow		PRIVATE
+	DllGetClassObject	PRIVATE
+	DllRegisterServer	PRIVATE
+	DllUnregisterServer	PRIVATE
+	DllInstall		PRIVATE

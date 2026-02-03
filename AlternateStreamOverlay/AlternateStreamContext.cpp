@@ -209,6 +209,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 		GetClientRect(hWnd, &rc);
 
 		HWND hList = GetDlgItem(hWnd, IDC_LIST);
+		SendMessage(hList, LVM_ENABLEGROUPVIEW, TRUE, 0);
 		//MoveWindow(hList, 12, 30, (rc.right - rc.left) - 24, rc.top + 200, TRUE);
 
 		ListView_SetExtendedListViewStyle(
@@ -231,12 +232,27 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 		col.cx = 100;
 		ListView_InsertColumn(hList, 1, &col);
 
+		/* ===== separator groups ===== */
+		LVGROUP grp = {};
+		grp.cbSize = sizeof(LVGROUP);
+		grp.mask = LVGF_GROUPID | LVGF_HEADER;
+
+		/* Separator A */
+		grp.iGroupId = 1;
+		grp.pszHeader = (LPWSTR)L"xxxx";
+		SendMessage(hList, LVM_INSERTGROUP, -1, (LPARAM)&grp);
+
+		/* Separator B */
+		grp.iGroupId = 2;
+		grp.pszHeader = (LPWSTR)L"yyyyy";
+		SendMessage(hList, LVM_INSERTGROUP, -1, (LPARAM)&grp);
 
 		for (int i = 0; i < (int)streams.size(); ++i)
 		{
 			LVITEMW item = {};
-			item.mask = LVIF_TEXT;
+			item.mask = LVIF_TEXT | LVIF_GROUPID;
 			item.iItem = i;
+			item.iGroupId = 1;
 			item.pszText = (LPWSTR)streams[i].c_str();
 			ListView_InsertItem(hList, &item);
 

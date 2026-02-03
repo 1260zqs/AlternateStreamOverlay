@@ -3,25 +3,24 @@
 /* this ALWAYS GENERATED file contains the definitions for the interfaces */
 
 
- /* File created by MIDL compiler version 7.00.0500 */
-/* at Fri Jun 21 11:35:59 2013
+ /* File created by MIDL compiler version 8.01.0628 */
+/* at Tue Jan 19 11:14:07 2038
  */
-/* Compiler settings for .\AlternateStreamOverlay.idl:
-    Oicf, W1, Zp8, env=Win64 (32b run)
-    protocol : dce , ms_ext, c_ext, robust
+/* Compiler settings for AlternateStreamOverlay.idl:
+    Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 8.01.0628 
+    protocol : all , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
          __declspec(uuid()), __declspec(selectany), __declspec(novtable)
          DECLSPEC_UUID(), MIDL_INTERFACE()
 */
-//@@MIDL_FILE_HEADING(  )
+/* @@MIDL_FILE_HEADING(  ) */
 
-#pragma warning( disable: 4049 )  /* more than 64k source lines */
 
 
 /* verify that the <rpcndr.h> version is high enough to compile this file*/
 #ifndef __REQUIRED_RPCNDR_H_VERSION__
-#define __REQUIRED_RPCNDR_H_VERSION__ 475
+#define __REQUIRED_RPCNDR_H_VERSION__ 500
 #endif
 
 #include "rpc.h"
@@ -29,7 +28,7 @@
 
 #ifndef __RPCNDR_H_VERSION__
 #error this stub requires an updated version of <rpcndr.h>
-#endif // __RPCNDR_H_VERSION__
+#endif /* __RPCNDR_H_VERSION__ */
 
 #ifndef COM_NO_WINDOWS_H
 #include "windows.h"
@@ -43,17 +42,27 @@
 #pragma once
 #endif
 
+#ifndef DECLSPEC_XFGVIRT
+#if defined(_CONTROL_FLOW_GUARD_XFG)
+#define DECLSPEC_XFGVIRT(base, func) __declspec(xfg_virtual(base, func))
+#else
+#define DECLSPEC_XFGVIRT(base, func)
+#endif
+#endif
+
 /* Forward Declarations */ 
 
 #ifndef __IAlternateStreamOverlayIcon_FWD_DEFINED__
 #define __IAlternateStreamOverlayIcon_FWD_DEFINED__
 typedef interface IAlternateStreamOverlayIcon IAlternateStreamOverlayIcon;
+
 #endif 	/* __IAlternateStreamOverlayIcon_FWD_DEFINED__ */
 
 
 #ifndef __IAlternateStreamContext_FWD_DEFINED__
 #define __IAlternateStreamContext_FWD_DEFINED__
 typedef interface IAlternateStreamContext IAlternateStreamContext;
+
 #endif 	/* __IAlternateStreamContext_FWD_DEFINED__ */
 
 
@@ -107,21 +116,25 @@ EXTERN_C const IID IID_IAlternateStreamOverlayIcon;
     public:
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAlternateStreamOverlayIconVtbl
     {
         BEGIN_INTERFACE
         
+        DECLSPEC_XFGVIRT(IUnknown, QueryInterface)
         HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
             IAlternateStreamOverlayIcon * This,
             /* [in] */ REFIID riid,
-            /* [iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            /* [annotation][iid_is][out] */ 
+            _COM_Outptr_  void **ppvObject);
         
+        DECLSPEC_XFGVIRT(IUnknown, AddRef)
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAlternateStreamOverlayIcon * This);
         
+        DECLSPEC_XFGVIRT(IUnknown, Release)
         ULONG ( STDMETHODCALLTYPE *Release )( 
             IAlternateStreamOverlayIcon * This);
         
@@ -176,21 +189,25 @@ EXTERN_C const IID IID_IAlternateStreamContext;
     public:
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAlternateStreamContextVtbl
     {
         BEGIN_INTERFACE
         
+        DECLSPEC_XFGVIRT(IUnknown, QueryInterface)
         HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
             IAlternateStreamContext * This,
             /* [in] */ REFIID riid,
-            /* [iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            /* [annotation][iid_is][out] */ 
+            _COM_Outptr_  void **ppvObject);
         
+        DECLSPEC_XFGVIRT(IUnknown, AddRef)
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAlternateStreamContext * This);
         
+        DECLSPEC_XFGVIRT(IUnknown, Release)
         ULONG ( STDMETHODCALLTYPE *Release )( 
             IAlternateStreamContext * This);
         

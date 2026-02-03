@@ -16,13 +16,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// Ó¢Óï(ÃÀ¹ú) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -99,19 +97,22 @@ END
 
 IDR_ALTERNATESTREAMOVERLAY REGISTRY                "AlternateStreamOverlay.rgs"
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // Dialog
 //
 
-IDD_PROPPAGE_MEDIUM DIALOGEX 0, 0, 252, 228
-STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Alternate Streams"
-FONT 8, "MS Shell Dlg", 400, 0, 0x0
+IDD_PROPPAGE_MEDIUM DIALOGEX 0, 0, 260, 337
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Streams"
+FONT 9, "Segoe UI", 400, 0, 0x0
 BEGIN
     COMBOBOX        IDC_COMBO1,7,7,168,67,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
     CONTROL         "Show as hex",IDC_CHECK1,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,186,7,59,10
-    EDITTEXT        IDC_EDIT1,7,22,238,199,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    EDITTEXT        IDC_EDIT1,7,22,70,33,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_VISIBLE | WS_VSCROLL
+    PUSHBUTTON      "Add",IDC_BTN_ADD,30,298,50,16
+    PUSHBUTTON      "Delete",IDC_BTN_DEL,123,297,50,16
 END
 
 
@@ -121,14 +122,14 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_PROPPAGE_MEDIUM, DIALOG
     BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 245
         TOPMARGIN, 7
-        BOTTOMMARGIN, 221
+        BOTTOMMARGIN, 330
     END
 END
 #endif    // APSTUDIO_INVOKED
@@ -136,26 +137,35 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_PROPPAGE_MEDIUM AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_PROJNAME            "AlternateStreamOverlay"
 END
 
-#endif    // English (U.S.) resources
+#endif    // Ó¢Óï(ÃÀ¹ú) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
+// Ó¢Óï(Ó¢¹ú) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
-#endif //_WIN32
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -163,7 +173,9 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 //
 
 IDR_ALTERNATESTREAMOVERLAYICON REGISTRY                "AlternateStreamOverlayIcon.rgs"
+
 IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -173,7 +185,8 @@ IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "ASO.ico"
-#endif    // English (U.K.) resources
+
+#endif    // Ó¢Óï(Ó¢¹ú) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

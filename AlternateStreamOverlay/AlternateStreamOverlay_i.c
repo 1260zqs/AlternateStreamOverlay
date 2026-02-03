@@ -5,20 +5,19 @@
 /* link this file in with the server and any clients */
 
 
- /* File created by MIDL compiler version 7.00.0500 */
-/* at Fri Jun 21 11:35:59 2013
+ /* File created by MIDL compiler version 8.01.0628 */
+/* at Tue Jan 19 11:14:07 2038
  */
-/* Compiler settings for .\AlternateStreamOverlay.idl:
-    Oicf, W1, Zp8, env=Win64 (32b run)
-    protocol : dce , ms_ext, c_ext, robust
+/* Compiler settings for AlternateStreamOverlay.idl:
+    Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 8.01.0628 
+    protocol : all , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
          __declspec(uuid()), __declspec(selectany), __declspec(novtable)
          DECLSPEC_UUID(), MIDL_INTERFACE()
 */
-//@@MIDL_FILE_HEADING(  )
+/* @@MIDL_FILE_HEADING(  ) */
 
-#pragma warning( disable: 4049 )  /* more than 64k source lines */
 
 
 #ifdef __cplusplus
@@ -63,9 +62,9 @@ typedef IID CLSID;
 #endif // CLSID_DEFINED
 
 #define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
-        const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
+        EXTERN_C __declspec(selectany) const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
 
-#endif !_MIDL_USE_GUIDDEF_
+#endif // !_MIDL_USE_GUIDDEF_
 
 MIDL_DEFINE_GUID(IID, IID_IAlternateStreamOverlayIcon,0xCFC72A5F,0xE58B,0x43BD,0x89,0x68,0xBA,0x89,0xAF,0xB2,0x24,0x0D);
 

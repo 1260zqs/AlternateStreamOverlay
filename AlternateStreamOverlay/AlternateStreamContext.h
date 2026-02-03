@@ -15,9 +15,10 @@ class ATL_NO_VTABLE CAlternateStreamContext :
 	public CComCoClass<CAlternateStreamContext, &CLSID_AlternateStreamContext>,
 	public IAlternateStreamContext,
 	public IShellExtInit,
-	public IContextMenu,
 	public IShellPropSheetExt
 {
+public:
+	HWND hList;
 private:
 	HFONT font;
 	std::wstring m_path;
@@ -43,7 +44,6 @@ DECLARE_NOT_AGGREGATABLE(CAlternateStreamContext)
 BEGIN_COM_MAP(CAlternateStreamContext)
 	COM_INTERFACE_ENTRY(IAlternateStreamContext)
 	COM_INTERFACE_ENTRY(IShellExtInit)
-	COM_INTERFACE_ENTRY(IContextMenu)
 	COM_INTERFACE_ENTRY(IShellPropSheetExt)
 END_COM_MAP()
 
@@ -67,21 +67,6 @@ public:
 	void attach_font_resource(HFONT font);
 	// IShellExtInit
 	STDMETHODIMP Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgId);
-	// IContextMenu
-	STDMETHODIMP QueryContextMenu( 
-			HMENU hmenu,
-			UINT indexMenu,
-            UINT idCmdFirst,
-            UINT idCmdLast,
-            UINT uFlags);
-	STDMETHODIMP InvokeCommand( 
-            CMINVOKECOMMANDINFO *pici);
-	STDMETHODIMP GetCommandString( 
-            UINT_PTR idCmd,
-            UINT uType,
-            UINT *pReserved,
-            LPSTR pszName,
-            UINT cchMax);
 	// IShellPropSheetExt
 	STDMETHODIMP AddPages( 
             LPFNSVADDPROPSHEETPAGE pfnAddPage,

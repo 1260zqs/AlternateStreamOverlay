@@ -60,79 +60,6 @@ STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IData
 	return hr;
 }
 
-STDMETHODIMP CAlternateStreamContext::QueryContextMenu( 
-			HMENU hmenu,
-			UINT indexMenu,
-            UINT idCmdFirst,
-            UINT idCmdLast,
-            UINT uFlags)
-{
-	if (uFlags & CMF_DEFAULTONLY || m_streams.size() <= (m_isDirectory ? 0 : 1))
-	{
-		return MAKE_HRESULT(SEVERITY_SUCCESS, FACILITY_NULL, 0);
-	}
-
-	UINT uId = idCmdFirst;
-
-//	InsertMenu(hmenu, uId, MF_BYPOSITION | MF_SEPARATOR, uId, L"");
-//	uId++;
-	HMENU subMenu = CreatePopupMenu();
-
-	UINT id = 0;
-	for (std::vector<std::wstring>::const_iterator vit = m_streams.begin(); vit != m_streams.end(); ++vit)
-	{
-		InsertMenu(subMenu, id++, MF_BYPOSITION, uId++, vit->c_str());
-	}
-	
-	MENUITEMINFO mii = { sizeof(MENUITEMINFO) };
-
-	mii.fMask = MIIM_SUBMENU | MIIM_STRING | MIIM_ID;
-	mii.wID = uId++;
-	mii.hSubMenu = subMenu;
-	mii.dwTypeData = _T("Alternate Streams");
-
-	InsertMenuItem(hmenu, indexMenu, TRUE, &mii);
-
-	return MAKE_HRESULT(SEVERITY_SUCCESS, FACILITY_NULL, uId - idCmdFirst);
-}
-
-// Don't actually do anything - it's available in the property page.
-STDMETHODIMP CAlternateStreamContext::InvokeCommand( 
-            CMINVOKECOMMANDINFO *pCmdInfo)
-{
-	return S_OK;
-}
-
-STDMETHODIMP CAlternateStreamContext::GetCommandString( 
-            UINT_PTR idCmd,
-            UINT uFlags,
-            UINT *pReserved,
-            LPSTR pszName,
-            UINT cchMax)
-{
-	USES_CONVERSION;
-
-	// Only support one command right now.
-	if (0 != idCmd) return E_INVALIDARG;
-	
-	// If explorer is asking for a help string, copy our string into the supplied buffer.
-	if (uFlags & GCS_HELPTEXT)
-	{
-		LPCTSTR szText = _T("AlternateStreamOverlay - www.benf.org");
-
-		if (uFlags & GCS_UNICODE)
-		{
-			lstrcpynW((LPWSTR)pszName, T2CW(szText), cchMax);
-		}
-		else
-		{
-			lstrcpynA(pszName, T2A(szText), cchMax);
-		}
-		return S_OK;
-	}
-	return E_INVALIDARG;
-}
-
 const std::vector<std::wstring> & CAlternateStreamContext::get_streams() const
 {
 	return m_streams;
@@ -279,7 +206,70 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 		SendMessage(comboBox, CB_ADDSTRING, 0, (LPARAM)vit->c_str());
 	}
 
-	HFONT font = CreateFont(14,0,0,0,FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
+	{
+		INITCOMMONCONTROLSEX icc = {
+	sizeof(icc),
+	ICC_LISTVIEW_CLASSES
+		};
+		InitCommonControlsEx(&icc);
+
+		RECT rc;
+		GetClientRect(hWnd, &rc);
+
+		HWND hList = CreateWindowExW(
+			WS_EX_CLIENTEDGE,
+			WC_LISTVIEWW,                 // "SysListView32"
+			nullptr,
+			WS_CHILD | WS_VISIBLE | WS_TABSTOP |
+			LVS_REPORT | LVS_SINGLESEL,
+			12, 70,                         // x, y
+			rc.right - 24,                 // width
+			rc.top + 200,                // height
+			hWnd,                          // parent = dialog
+			(HMENU)NULL,               // control ID
+			GetModuleHandleW(nullptr),     // hInstance
+			nullptr
+		);
+
+		ListView_SetExtendedListViewStyle(
+			hList,
+			LVS_EX_FULLROWSELECT |
+			LVS_EX_GRIDLINES |
+			LVS_EX_DOUBLEBUFFER
+		);
+
+		pthis->hList = hList;
+
+		LVCOLUMNW col = {};
+		col.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
+
+		col.pszText = (LPWSTR)L"Stream";
+		col.cx = 180;
+		ListView_InsertColumn(hList, 0, &col);
+
+		col.pszText = (LPWSTR)L"Size";
+		col.cx = 100;
+		ListView_InsertColumn(hList, 1, &col);
+
+
+		for (int i = 0; i < (int)streams.size(); ++i)
+		{
+			LVITEMW item = {};
+			item.mask = LVIF_TEXT;
+			item.iItem = i;
+			item.pszText = (LPWSTR)streams[i].c_str();
+			ListView_InsertItem(hList, &item);
+
+			wchar_t text[] = L"(unknown)";
+			ListView_SetItemText(hList, i, 1, text);
+		}
+
+		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ADD), FALSE);
+		EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), FALSE);
+	}
+
+
+	HFONT font = CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
 		CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, L"Courier New");
 	pthis->attach_font_resource(font);
 	SendMessage(textBox, WM_SETFONT, (WPARAM)font, MAKELPARAM(TRUE,0)); 
@@ -290,7 +280,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	return FALSE; 
 }
 
-UINT CALLBACK PropPageCallbackProc(HWND hWnd, UINT uMsg, LPPROPSHEETPAGE ppsp)
+static UINT CALLBACK PropPageCallbackProc(HWND hWnd, UINT uMsg, LPPROPSHEETPAGE ppsp)
 {
 	CAlternateStreamContext * pthis = reinterpret_cast<CAlternateStreamContext*>(ppsp->lParam);
 
@@ -320,7 +310,23 @@ DLGRETURN CALLBACK PropPageDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 		bRet = OnInitDialog(hWnd, lParam);
 		break;
 	case WM_NOTIFY:
+	{
+#ifdef _WIN64
+		long lUserData = (long)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+#else
+		long lUserData = (long)GetWindowLong(hWnd, GWL_USERDATA);
+#endif
+		NMHDR* hdr = (NMHDR*)lParam;
+		CAlternateStreamContext* pthis = reinterpret_cast<CAlternateStreamContext*>(lUserData);
+		if (hdr->hwndFrom == pthis->hList && hdr->code == LVN_ITEMCHANGED)
+		{
+			int sel = ListView_GetNextItem(pthis->hList, -1, LVNI_SELECTED);
+
+			EnableWindow(GetDlgItem(hWnd, IDC_BTN_ADD), sel != -1);
+			EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), sel != -1);
+		}
 		break;
+	}
 	case WM_COMMAND:
 		{
 			HWND comboBox = GetDlgItem(hWnd, IDC_COMBO1);
@@ -352,6 +358,21 @@ DLGRETURN CALLBACK PropPageDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 				}
 				}
 				break;
+			case IDC_BTN_DEL:
+				if (wmEvent == BN_CLICKED)
+				{
+					int ret = MessageBoxW(
+						hWnd,
+						L"Are you sure you want to delete this item?",
+						L"Confirm Delete",
+						MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
+					);
+					if (ret == IDOK)
+					{
+
+					}
+				}
+				break;
 			}
 		}
 		break;
@@ -366,7 +387,6 @@ STDMETHODIMP CAlternateStreamContext::AddPages(
 {
 	PROPSHEETPAGE psp;
 	HPROPSHEETPAGE hPage;
-	LPCWSTR szPageTitle = L"AlternateStreams";
 	psp.dwSize = sizeof(PROPSHEETPAGE);
 	psp.dwFlags =  PSP_USETITLE | PSP_USECALLBACK; 
 	psp.hInstance = _AtlBaseModule.GetResourceInstance();
@@ -374,7 +394,7 @@ STDMETHODIMP CAlternateStreamContext::AddPages(
 	psp.pfnCallback = PropPageCallbackProc;
 	psp.pfnDlgProc  = PropPageDlgProc;
 	psp.lParam = (LPARAM)this;
-	psp.pszTitle = szPageTitle;
+	psp.pszTitle = TEXT("Streams");
 
 	hPage = CreatePropertySheetPage(&psp);
 

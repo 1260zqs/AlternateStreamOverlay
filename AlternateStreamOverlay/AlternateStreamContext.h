@@ -1,12 +1,14 @@
 #pragma once
-#include "resource.h"       // main symbols
 
-#include "AlternateStreamOverlay_i.h"
 #include <shlobj.h>
 #include <comdef.h>
 #include <vector>
 #include <string>
 #include <windows.h>
+
+#include "resource.h"       // main symbols
+#include "AlternateStreamOverlay_i.h"
+#include "Common.h"
 
 /* Responsible for context menu item, and property tab */
 
@@ -18,24 +20,13 @@ class ATL_NO_VTABLE CAlternateStreamContext :
 	public IShellPropSheetExt
 {
 public:
-	HWND hList;
+	int sortColumn;
+	bool sortAsc;
 private:
-	HFONT font;
-	std::wstring m_path;
 	bool m_isDirectory;
-	std::vector<std::wstring> m_streams;
+	std::wstring m_path;
+	std::vector<FileStreamData> m_streams;
 public:
-	CAlternateStreamContext() : font(NULL)
-	{
-	}
-
-	~CAlternateStreamContext()
-	{
-		if (font != NULL)
-		{
-			DeleteObject(font);
-		}
-	}
 
 DECLARE_REGISTRY_RESOURCEID(IDR_ALTERNATESTREAMCONTEXT)
 
@@ -62,9 +53,8 @@ END_COM_MAP()
 
 public:
 	// Native
-	const std::vector<std::wstring> & get_streams() const;
-	const std::wstring & get_path() const;
-	void attach_font_resource(HFONT font);
+	const std::wstring& get_path() const;
+	const std::vector<FileStreamData>& get_streams() const;
 	// IShellExtInit
 	STDMETHODIMP Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgId);
 	// IShellPropSheetExt

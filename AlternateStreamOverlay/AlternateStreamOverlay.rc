@@ -16,7 +16,41 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United States) resources
+// 中文(简体，中国) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
+LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
+#pragma code_page(936)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENU1 MENU
+BEGIN
+    POPUP "ItemMenu"
+    BEGIN
+        MENUITEM "Open",                        ID_ITEMMENU_OPEN
+        MENUITEM "Save as",                     ID_ITEMMENU_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "Copy Name",                   ID_ITEMMENU_COPYNAME
+        MENUITEM SEPARATOR
+        MENUITEM "Delete",                      ID_ITEMMENU_DELETE
+    END
+    POPUP "BlankMenu"
+    BEGIN
+        MENUITEM "Add",                         ID_BLANKMENU_ADD
+        MENUITEM "Refresh",                     ID_BLANKMENU_REFRESH
+    END
+END
+
+#endif    // 中文(简体，中国) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// 英语(美国) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
@@ -154,14 +188,20 @@ END
 STRINGTABLE
 BEGIN
     IDS_PROJNAME            "AlternateStreamOverlay"
+    IDS_STR_STREAM          "Streams"
+    IDS_STR_SIZE            "Size"
+    IDS_STR_ADD             "Add"
+    IDS_STR_DEL             "Delete"
+    IDS_STR_OPEN            "Open"
+    IDS_STR_SAVE            "Save"
 END
 
-#endif    // English (United States) resources
+#endif    // 英语(美国) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (United Kingdom) resources
+// 英语(英国) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
@@ -186,7 +226,7 @@ IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "ASO.ico"
 
-#endif    // English (United Kingdom) resources
+#endif    // 英语(英国) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

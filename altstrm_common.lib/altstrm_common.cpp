@@ -76,7 +76,7 @@ bool NTInnerXP::GetInformationByHandle(HANDLE hFile, PFILE_STREAM_INFO infoBlock
 }
 
 NTInnerAPI::NTInnerAPI() {
-	HMODULE kernelDll = GetModuleHandle(L"kernel32.dll");
+	HMODULE kernelDll = GetModuleHandle(TEXT("kernel32.dll"));
 	getFileInformationByHandleEx = (tGetFileInformationByHandleEx)GetProcAddress(kernelDll, "GetFileInformationByHandleEx");
 	if (!getFileInformationByHandleEx)
 	{
@@ -88,7 +88,7 @@ bool NTInnerAPI::GetInformationByHandle(HANDLE hFile, PFILE_STREAM_INFO infoBloc
 	if (!getFileInformationByHandleEx) return false;
 	// Can I just use getFileInformationByHandleEx now??
 	// Yes, if we can guarantee vista....
-	if (FALSE == getFileInformationByHandleEx(hFile,FileStreamInfo, infoBlock, length)) {
+	if (FALSE == getFileInformationByHandleEx(hFile, FileStreamInfo, infoBlock, length)) {
 		return false;
 	}
 	return true;
@@ -165,26 +165,31 @@ bool NTDllFuncs::HasAlternateStreams(LPCWSTR fname)
 	return HasAlternateStreams(hFile);
 }
 
-std::vector<std::wstring> NTDllFuncs::ListAlternateStreams(HANDLE hFile)
+std::vector<FileStreamData> NTDllFuncs::ListAlternateStreams(HANDLE hFile)
 {
 	// Enough space for all streams.
 	BYTE infoBlock[64 * 1024];
 	PFILE_STREAM_INFO pStreamInfo = (PFILE_STREAM_INFO)infoBlock;
 	if (!inner->GetInformationByHandle(hFile, pStreamInfo, sizeof(infoBlock))) {
-		return std::vector<std::wstring>();
+		return std::vector<FileStreamData>();
 	}
 
 	WCHAR wszStreamName[MAX_PATH];
 	int count = 0;
-	std::vector<std::wstring> result;
+	std::vector<FileStreamData> result;
 	for (;;)
 	{
 		if (pStreamInfo->StreamNameLength == 0) break;
 
 		++count;
 		memcpy(wszStreamName, pStreamInfo->StreamName, pStreamInfo->StreamNameLength);
-		wszStreamName[pStreamInfo->StreamNameLength / sizeof(WCHAR)] = L'\0';
-		result.push_back(std::wstring(wszStreamName));
+		wszStreamName[pStreamInfo->StreamNameLength / sizeof(WCHAR)] = NULL;
+
+		FileStreamData fs{};
+		fs.streamName = std::wstring(wszStreamName);
+		fs.streamSize = pStreamInfo->StreamSize;
+		fs.streamAllocationSize = pStreamInfo->StreamAllocationSize;
+		result.push_back(fs);
 
 		if (pStreamInfo->NextEntryOffset == 0) break;
 		pStreamInfo = (PFILE_STREAM_INFO)((LPBYTE)pStreamInfo + pStreamInfo->NextEntryOffset);
@@ -192,15 +197,13 @@ std::vector<std::wstring> NTDllFuncs::ListAlternateStreams(HANDLE hFile)
 	return result;
 }
 
-std::vector<std::wstring> NTDllFuncs::ListAlternateStreams(LPCWSTR fname)
+std::vector<FileStreamData> NTDllFuncs::ListAlternateStreams(LPCWSTR fname)
 {
 	HandleW hFile = ::CreateFile(fname, 0, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 	if (hFile == INVALID_HANDLE_VALUE) 
 	{
-		return std::vector<std::wstring>();
+		return std::vector<FileStreamData>();
 	}
 
-	std::vector<std::wstring> result = ListAlternateStreams(hFile);
-
-	return result;
+	return ListAlternateStreams(hFile);
 }

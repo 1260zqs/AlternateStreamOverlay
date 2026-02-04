@@ -7,6 +7,11 @@
 #include <string> 
 #include <windows.h> 
 
+struct FileStreamData {
+	std::wstring streamName;
+	LARGE_INTEGER streamSize;
+	LARGE_INTEGER streamAllocationSize;
+};
 
 class HandleW
 {
@@ -98,8 +103,8 @@ public:
 
 	bool HasAlternateStreams(HANDLE hFile);
 	bool HasAlternateStreams(LPCWSTR fname);
-	std::vector<std::wstring> ListAlternateStreams(HANDLE hFile);
-	std::vector<std::wstring> ListAlternateStreams(LPCWSTR fname);
+	std::vector<FileStreamData> ListAlternateStreams(HANDLE hFile);
+	std::vector<FileStreamData> ListAlternateStreams(LPCWSTR fname);
 };
 
 #endif // include guard

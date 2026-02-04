@@ -9,7 +9,7 @@
 
 #define START_OF_HEX_TEXT 10
 #define START_OF_ASCII_TEXT 36
-
+int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData);
 
 STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pDataObj, HKEY hkeyProgId)
 {
@@ -52,20 +52,20 @@ STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IData
 	m_isDirectory = directory;
 	m_streams = listAlternateStreams(szFile);
 	// We have the filename, do we want to present a menu item for it?
-	if (m_streams.size() <= (directory ? 0 : 1)) 
-	{
-		hr = E_FAIL;
-	}
+	//if (m_streams.size() <= (directory ? 0 : 1)) 
+	//{
+	//	hr = E_FAIL;
+	//}
 
 	return hr;
 }
 
-const std::vector<std::wstring> & CAlternateStreamContext::get_streams() const
+const std::vector<FileStreamData>& CAlternateStreamContext::get_streams() const
 {
 	return m_streams;
 }
 
-const std::wstring & CAlternateStreamContext::get_path() const
+const std::wstring& CAlternateStreamContext::get_path() const
 {
 	return m_path;
 }
@@ -135,7 +135,7 @@ void DumpHex(BYTE * buf, DWORD size, std::stringstream & tgt)
 
 void SelectText(CAlternateStreamContext * pthis, size_t idx, bool asHex, HWND textBox)
 {
-	const std::vector<std::wstring> & streams = pthis->get_streams();
+	auto streams = pthis->get_streams();
 	const std::wstring & fname = pthis->get_path();
 
 	if (idx < 0 || idx >= streams.size()) 
@@ -145,7 +145,7 @@ void SelectText(CAlternateStreamContext * pthis, size_t idx, bool asHex, HWND te
 	}
 
 	std::wstringstream ss;
-	ss << fname << streams[idx];
+	ss << fname << streams[idx].streamName;
 	std::wstring full_path = ss.str();
 
 	HandleW hFile(::CreateFile(full_path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL));
@@ -181,11 +181,6 @@ void SelectText(CAlternateStreamContext * pthis, size_t idx, bool asHex, HWND te
 	
 }
 
-void CAlternateStreamContext::attach_font_resource(HFONT font)
-{
-	this->font = font;
-}
-
 BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 {
 	PROPSHEETPAGE * ppsp = (PROPSHEETPAGE*)lParam;
@@ -196,21 +191,17 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	SetWindowLong(hWnd, GWL_USERDATA, (LONG)pthis);
 #endif
 
-	const std::vector<std::wstring> & streams = pthis->get_streams();
+	const std::vector<FileStreamData>& streams = pthis->get_streams();
 
 	{
-		INITCOMMONCONTROLSEX icc = {
-	sizeof(icc),
-	ICC_LISTVIEW_CLASSES
-		};
+		INITCOMMONCONTROLSEX icc = { sizeof(icc),ICC_LISTVIEW_CLASSES };
 		InitCommonControlsEx(&icc);
 
 		RECT rc;
 		GetClientRect(hWnd, &rc);
 
 		HWND hList = GetDlgItem(hWnd, IDC_LIST);
-		SendMessage(hList, LVM_ENABLEGROUPVIEW, TRUE, 0);
-		//MoveWindow(hList, 12, 30, (rc.right - rc.left) - 24, rc.top + 200, TRUE);
+		//SendMessage(hList, LVM_ENABLEGROUPVIEW, TRUE, 0);
 
 		ListView_SetExtendedListViewStyle(
 			hList,
@@ -219,55 +210,40 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 			LVS_EX_DOUBLEBUFFER
 		);
 
-		pthis->hList = hList;
-
 		LVCOLUMNW col = {};
 		col.mask = LVCF_TEXT | LVCF_WIDTH | LVCF_SUBITEM;
 
-		col.pszText = (LPWSTR)L"Stream";
+		TCHAR szBuffer[MAX_PATH << 1];
+		LoadString(ppsp->hInstance, IDS_STR_STREAM, szBuffer, std::size(szBuffer));
+
 		col.cx = 180;
+		col.pszText = szBuffer;
 		ListView_InsertColumn(hList, 0, &col);
 
-		col.pszText = (LPWSTR)L"Size";
-		col.cx = 100;
+		LoadString(ppsp->hInstance, IDS_STR_SIZE, szBuffer, std::size(szBuffer));
+		col.cx = 240;
+		col.pszText = szBuffer;
 		ListView_InsertColumn(hList, 1, &col);
 
-		/* ===== separator groups ===== */
-		LVGROUP grp = {};
-		grp.cbSize = sizeof(LVGROUP);
-		grp.mask = LVGF_GROUPID | LVGF_HEADER;
-
-		/* Separator A */
-		grp.iGroupId = 1;
-		grp.pszHeader = (LPWSTR)L"xxxx";
-		SendMessage(hList, LVM_INSERTGROUP, -1, (LPARAM)&grp);
-
-		/* Separator B */
-		grp.iGroupId = 2;
-		grp.pszHeader = (LPWSTR)L"yyyyy";
-		SendMessage(hList, LVM_INSERTGROUP, -1, (LPARAM)&grp);
-
+		const FileStreamData* pStreams = streams.data();
 		for (int i = 0; i < (int)streams.size(); ++i)
 		{
+			const FileStreamData& fs = streams[i];
+
 			LVITEMW item = {};
-			item.mask = LVIF_TEXT | LVIF_GROUPID;
+			item.mask = LVIF_TEXT | LVIF_PARAM;
 			item.iItem = i;
-			item.iGroupId = 1;
-			item.pszText = (LPWSTR)streams[i].c_str();
+			item.lParam = (LPARAM)i;
+			item.pszText = (LPWSTR)fs.streamName.c_str();
 			ListView_InsertItem(hList, &item);
 
-			wchar_t text[] = L"(unknown)";
-			ListView_SetItemText(hList, i, 1, text);
+			std::wstring text = FormatFileSizeString(fs.streamSize);
+			ListView_SetItemText(hList, i, 1, (LPWSTR)text.c_str());
 		}
 
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_ADD), FALSE);
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), FALSE);
 	}
-
-
-	HFONT font = CreateFont(14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
-		CLIP_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_DONTCARE, L"Courier New");
-	pthis->attach_font_resource(font);
 
 	return FALSE; 
 }
@@ -292,7 +268,7 @@ typedef INT_PTR DLGRETURN;
 typedef BOOL DLGRETURN;
 #endif
 
-DLGRETURN CALLBACK PropPageDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	DLGRETURN bRet = (DLGRETURN)FALSE;
 
@@ -308,41 +284,90 @@ DLGRETURN CALLBACK PropPageDlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 #else
 		long lUserData = (long)GetWindowLong(hWnd, GWL_USERDATA);
 #endif
+
 		NMHDR* hdr = (NMHDR*)lParam;
 		CAlternateStreamContext* pthis = reinterpret_cast<CAlternateStreamContext*>(lUserData);
-		if (hdr->hwndFrom == pthis->hList && hdr->code == LVN_ITEMCHANGED)
+		if (hdr->idFrom == IDC_LIST)
 		{
-			int sel = ListView_GetNextItem(pthis->hList, -1, LVNI_SELECTED);
-
-			EnableWindow(GetDlgItem(hWnd, IDC_BTN_ADD), sel != -1);
-			EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), sel != -1);
-		}
-		break;
-	}
-	case WM_COMMAND:
-		{
-			int wmid = LOWORD(wParam);
-			int wmEvent = HIWORD(wParam);
-			switch (wmid)
+			HWND hList = hdr->hwndFrom;
+			if (hdr->code == LVN_COLUMNCLICK)
 			{
-			case IDC_BTN_DEL:
-				if (wmEvent == BN_CLICKED)
+				NMLISTVIEW* listView = (NMLISTVIEW*)lParam;
+				if (pthis->sortColumn == listView->iSubItem)
 				{
-					int ret = MessageBoxW(
-						hWnd,
-						L"Are you sure you want to delete this item?",
-						L"Confirm Delete",
-						MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
-					);
-					if (ret == IDOK)
-					{
 
-					}
 				}
-				break;
+				ListView_SortItemsEx(
+					hdr->hwndFrom,
+					ListCompareProc,
+					(LPARAM)pthis
+				);
+			}
+			else if (hdr->code == LVN_ITEMCHANGED)
+			{
+				int sel = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
+
+				EnableWindow(GetDlgItem(hWnd, IDC_BTN_ADD), sel != -1);
+				EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), sel != -1);
+			}
+			else if (hdr->code == NM_RCLICK)
+			{
+				DWORD pos = GetMessagePos();
+				POINT pt = { GET_X_LPARAM(pos), GET_Y_LPARAM(pos) };
+
+				LVHITTESTINFO hit{};
+				hit.pt = pt;
+				ScreenToClient(hList, &hit.pt);
+				ListView_HitTest(hList, &hit);
+
+				if (hit.iItem >= 0) {
+
+					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtrW(hWnd, GWLP_HINSTANCE);
+					HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
+					HMENU hPopup = GetSubMenu(hMenu, 0);
+
+					TrackPopupMenu(hPopup, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+				}
+				else
+				{
+					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtrW(hWnd, GWLP_HINSTANCE);
+					HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
+					HMENU hPopup = GetSubMenu(hMenu, 1);
+
+					TrackPopupMenu(hPopup, TPM_RIGHTBUTTON, pt.x, pt.y, 0, hWnd, NULL);
+				}
 			}
 		}
 		break;
+	}
+	case WM_RBUTTONDOWN:
+	{
+		break;
+	}
+	case WM_COMMAND:
+	{
+		int wmid = LOWORD(wParam);
+		int wmEvent = HIWORD(wParam);
+		switch (wmid)
+		{
+		case IDC_BTN_DEL:
+			if (wmEvent == BN_CLICKED)
+			{
+				int ret = MessageBoxW(
+					hWnd,
+					L"Are you sure you want to delete this item?",
+					L"Confirm Delete",
+					MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
+				);
+				if (ret == IDOK)
+				{
+
+				}
+			}
+			break;
+		}
+		break;
+	}
 	}
 	return bRet;
 }
@@ -359,7 +384,7 @@ STDMETHODIMP CAlternateStreamContext::AddPages(
 	psp.hInstance = _AtlBaseModule.GetResourceInstance();
 	psp.pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_MEDIUM);
 	psp.pfnCallback = PropPageCallbackProc;
-	psp.pfnDlgProc  = PropPageDlgProc;
+	psp.pfnDlgProc  = PropPageProc;
 	psp.lParam = (LPARAM)this;
 	psp.pszTitle = TEXT("Streams");
 
@@ -385,4 +410,17 @@ STDMETHODIMP CAlternateStreamContext::ReplacePage(
             LPARAM lParam)
 {
 	return E_NOTIMPL;
+}
+
+int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData)
+{
+	FileStreamData* a = (FileStreamData*)lParam1;
+	FileStreamData* b = (FileStreamData*)lParam2;
+	CAlternateStreamContext* pthis = (CAlternateStreamContext*)lUserData;
+	if (pthis->sortColumn == 1)
+	{
+
+	}
+	int x = a->streamName.compare(b->streamName);
+	return pthis->sortAsc ? x : -x;
 }

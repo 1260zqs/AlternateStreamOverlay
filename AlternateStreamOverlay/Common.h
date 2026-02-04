@@ -8,5 +8,6 @@
 
 bool hasAlternateStreams(LPCWSTR pwszPath);
 std::vector<FileStreamData> listAlternateStreams(LPCWSTR pwszPath);
-std::wstring FormatFileSizeString(size_t bytes);
-std::wstring FormatFileSizeString(const LARGE_INTEGER& li);
+std::wstring FormatFileSizeStringKB(size_t bytes);
+std::wstring FormatFileSizeStringKB(const LARGE_INTEGER& li);
+void CopyStrToClipboard(const TCHAR* str);

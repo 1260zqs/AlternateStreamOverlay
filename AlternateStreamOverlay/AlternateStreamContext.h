@@ -20,7 +20,8 @@ class ATL_NO_VTABLE CAlternateStreamContext :
 	public IShellPropSheetExt
 {
 public:
-	int sortColumn;
+	int iGroup;
+	int iItem;
 	bool sortAsc;
 private:
 	bool m_isDirectory;

@@ -366,6 +366,8 @@ explorer /select,c:\appverifUI.dll</Command>
   </ItemGroup>
   <ItemGroup>
     <Image Include="ASO.ico" />
+    <Image Include="image.ico" />
+    <Image Include="image.png" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />

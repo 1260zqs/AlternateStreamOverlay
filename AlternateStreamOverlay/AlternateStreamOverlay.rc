@@ -16,7 +16,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// 中文(简体，中国) resources
+// Chinese (Simplified, China) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_CHS)
 LANGUAGE LANG_CHINESE, SUBLANG_CHINESE_SIMPLIFIED
@@ -34,7 +34,7 @@ BEGIN
         MENUITEM "Open",                        ID_ITEMMENU_OPEN
         MENUITEM "Save as",                     ID_ITEMMENU_SAVEAS
         MENUITEM SEPARATOR
-        MENUITEM "Copy Name",                   ID_ITEMMENU_COPYNAME
+        MENUITEM "Copy Value",                  ID_ITEMMENU_COPY_VALUE
         MENUITEM SEPARATOR
         MENUITEM "Delete",                      ID_ITEMMENU_DELETE
     END
@@ -45,16 +45,140 @@ BEGIN
     END
 END
 
-#endif    // 中文(简体，中国) resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_IMAGE1              ICON                    "image.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_DIALOG_ADD_STREAM DIALOGEX 0, 0, 254, 118
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Add Stream"
+FONT 9, "Segoe UI", 400, 0, 0x1
+BEGIN
+    LTEXT           "Create a new alternate data stream for this file.The stream name must be unique.",IDC_STATIC,7,10,240,30
+    CONTROL         "",IDC_LINE,"Static",SS_ETCHEDHORZ,7,35,242,1
+    LTEXT           "Stream Name(N):",IDC_STATIC,7,47,182,10
+    EDITTEXT        IDC_EDIT_NAME,7,57,182,16,ES_AUTOHSCROLL
+    PUSHBUTTON      "Browser(B)...",IDC_BTN_BROWSER,197,57,50,16
+    DEFPUSHBUTTON   "OK",IDOK,141,95,50,16
+    PUSHBUTTON      "Cancel",IDCANCEL,197,95,50,16
+    EDITTEXT        IDC_FILE_BROWSER_PATH,7,77,240,16,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER,WS_EX_TOOLWINDOW | 0x800L
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_DIALOG_ADD_STREAM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 247
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 111
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG_ADD_STREAM AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_STR_STREAM_NAME     "文件名"
+    IDS_STR_STREAM_SIZE     "大小"
+    IDS_STR_STREAM_ALLOCATIONSIZE "占用空间"
+    IDS_STR_STREAM          "数据流"
+    IDS_STR_DESC            "备用数据流（Alternate Data Streams）是附加在文件上的 NTFS 额外数据，它们不会显示在 Windows 资源管理器中，可能用于存储附加信息。"
+END
+
+#endif    // Chinese (Simplified, China) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 英语(美国) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_PROPPAGE_MEDIUM DIALOGEX 0, 0, 260, 337
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
+CAPTION "Streams"
+FONT 9, "Segoe UI", 400, 0, 0x0
+BEGIN
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,50,246,233
+    LTEXT           "Alternate data streams are additional NTFS data attached to a file.",IDC_DESC,50,15,203,26
+    ICON            "",IDC_IMAGE,7,10,20,20
+    PUSHBUTTON      "Add",IDC_BTN_ADD,148,291,50,16
+    PUSHBUTTON      "Delete",IDC_BTN_DEL,203,291,50,16
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_PROPPAGE_MEDIUM, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 253
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 330
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_PROPPAGE_MEDIUM AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -134,88 +258,33 @@ IDR_ALTERNATESTREAMOVERLAY REGISTRY                "AlternateStreamOverlay.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Dialog
-//
-
-IDD_PROPPAGE_MEDIUM DIALOGEX 0, 0, 260, 337
-STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
-CAPTION "Streams"
-FONT 9, "Segoe UI", 400, 0, 0x0
-BEGIN
-    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,40,246,247
-    PUSHBUTTON      "Add",IDC_BTN_ADD,148,291,50,16
-    PUSHBUTTON      "Delete",IDC_BTN_DEL,203,291,50,16
-    PUSHBUTTON      "Save",IDC_BTN_SAVE,93,291,50,16
-    PUSHBUTTON      "Open",IDC_BTN_OPEN,38,291,50,16
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// DESIGNINFO
-//
-
-#ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO
-BEGIN
-    IDD_PROPPAGE_MEDIUM, DIALOG
-    BEGIN
-        LEFTMARGIN, 7
-        RIGHTMARGIN, 253
-        TOPMARGIN, 7
-        BOTTOMMARGIN, 330
-    END
-END
-#endif    // APSTUDIO_INVOKED
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// AFX_DIALOG_LAYOUT
-//
-
-IDD_PROPPAGE_MEDIUM AFX_DIALOG_LAYOUT
-BEGIN
-    0
-END
-
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // String Table
 //
 
 STRINGTABLE
 BEGIN
     IDS_PROJNAME            "AlternateStreamOverlay"
-    IDS_STR_STREAM          "Streams"
-    IDS_STR_SIZE            "Size"
+    IDS_STR_STREAM_NAME     "Name"
+    IDS_STR_STREAM_SIZE     "Size"
     IDS_STR_ADD             "Add"
     IDS_STR_DEL             "Delete"
     IDS_STR_OPEN            "Open"
     IDS_STR_SAVE            "Save"
+    IDS_STR_STREAM_ALLOCATIONSIZE "Allocation Size"
+    IDS_STR_STREAM          "Streams"
+    IDS_STR_DESC            "Alternate data streams are additional NTFS data attached to a file. They are not visible in Windows Explorer and may store extra information."
 END
 
-#endif    // 英语(美国) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 英语(英国) resources
+// English (United Kingdom) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
-
-/////////////////////////////////////////////////////////////////////////////
-//
-// REGISTRY
-//
-
-IDR_ALTERNATESTREAMOVERLAYICON REGISTRY                "AlternateStreamOverlayIcon.rgs"
-
-IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -226,7 +295,17 @@ IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
 // remains consistent on all systems.
 IDI_ICON1               ICON                    "ASO.ico"
 
-#endif    // 英语(英国) resources
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// REGISTRY
+//
+
+IDR_ALTERNATESTREAMOVERLAYICON REGISTRY                "AlternateStreamOverlayIcon.rgs"
+
+IDR_ALTERNATESTREAMCONTEXT REGISTRY                "AlternateStreamContext.rgs"
+
+#endif    // English (United Kingdom) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

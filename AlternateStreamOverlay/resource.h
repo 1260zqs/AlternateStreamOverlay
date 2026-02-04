@@ -1,26 +1,39 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ 生成的包含文件。
-// 供 AlternateStreamOverlay.rc 使用
+// Microsoft Visual C++ generated include file.
+// Used by AlternateStreamOverlay.rc
 //
 #define IDS_PROJNAME                    100
-#define IDS_STR_STREAM                  101
 #define IDR_ALTERNATESTREAMOVERLAY      101
-#define IDS_STR_SIZE                    102
+#define IDS_STR_STREAM_NAME             101
 #define IDR_ALTERNATESTREAMOVERLAYICON  102
-#define IDS_STR_ADD                     103
+#define IDS_STR_STREAM_SIZE             102
 #define IDR_ALTERNATESTREAMCONTEXT      103
-#define IDS_STR_DEL                     104
+#define IDS_STR_ADD                     103
 #define IDD_PROPPAGE_MEDIUM             104
+#define IDS_STR_DEL                     104
 #define IDS_STR_OPEN                    105
-#define IDI_ICON1                       105
 #define IDS_STR_SAVE                    106
-#define IDS_STRING106                   106
 #define IDC_LIST                        106
-#define IDC_BTN_ADD                     107
-#define IDC_BTN_DEL                     108
-#define IDC_BTN_SAVE                    109
-#define IDC_BTN_OPEN                    110
-#define IDR_MENU1                       207
+#define IDS_STR_STREAM_ALLOCATIONSIZE   107
+#define IDS_STR_STREAM                  108
+#define IDS_STR_DESC                    109
+#define IDI_ICON1                       209
+#define IDI_IMAGE1                      209
+#define IDD_DIALOG_ADD_STREAM           210
+#define IDC_DESC                        215
+#define IDC_EDIT_NAME                   216
+#define IDC_BTN_CREATE_STREAM           217
+#define IDC_BTN_BROWSER                 217
+#define IDC_TAB1                        219
+#define IDC_BUTTON1                     220
+#define IDC_FILE_BROWSER_PATH           221
+#define IDC_EDIT1                       222
+#define IDC_BTN_DEL                     10000
+#define IDC_BTN_ADD                     10001
+#define IDC_IMAGE                       10002
+#define IDC_LINE                        10003
+#define IDC_GRP                         10004
+#define IDR_MENU1                       30000
 #define ID_OPEN_SAVEAS                  32768
 #define ID_OPEN_SAVEAS32769             32769
 #define ID_Menu                         32770
@@ -33,16 +46,16 @@
 #define ID_BLANKMENU_REFRESH            32783
 #define ID_ITEMMENU_OPEN                32784
 #define ID_ITEMMENU_SAVEAS              32785
-#define ID_ITEMMENU_COPYNAME            32786
+#define ID_ITEMMENU_COPY_VALUE          32786
 #define ID_ITEMMENU_DELETE              32787
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        208
-#define _APS_NEXT_COMMAND_VALUE         32788
-#define _APS_NEXT_CONTROL_VALUE         215
+#define _APS_NEXT_RESOURCE_VALUE        212
+#define _APS_NEXT_COMMAND_VALUE         32789
+#define _APS_NEXT_CONTROL_VALUE         223
 #define _APS_NEXT_SYMED_VALUE           104
 #endif
 #endif

@@ -74,6 +74,7 @@ BEGIN
     DEFPUSHBUTTON   "OK",IDOK,141,95,50,16
     PUSHBUTTON      "Cancel",IDCANCEL,197,95,50,16
     EDITTEXT        IDC_FILE_BROWSER_PATH,7,77,240,16,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER,WS_EX_TOOLWINDOW | 0x800L
+    CONTROL         "Delete Source File",IDC_CHECK_DEL_SRC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,94,65,10
 END
 
 
@@ -116,6 +117,8 @@ STRINGTABLE
 BEGIN
     IDS_STR_STREAM_NAME     "文件名"
     IDS_STR_STREAM_SIZE     "大小"
+    IDS_STR_ADD             "添加"
+    IDS_STR_DEL             "删除"
     IDS_STR_STREAM_ALLOCATIONSIZE "占用空间"
     IDS_STR_STREAM          "数据流"
     IDS_STR_DESC            "备用数据流（Alternate Data Streams）是附加在文件上的 NTFS 额外数据，它们不会显示在 Windows 资源管理器中，可能用于存储附加信息。"
@@ -142,7 +145,7 @@ STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "Streams"
 FONT 9, "Segoe UI", 400, 0, 0x0
 BEGIN
-    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,50,246,233
+    CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,58,246,225
     LTEXT           "Alternate data streams are additional NTFS data attached to a file.",IDC_DESC,50,15,203,26
     ICON            "",IDC_IMAGE,7,10,20,20
     PUSHBUTTON      "Add",IDC_BTN_ADD,148,291,50,16

@@ -20,10 +20,9 @@ class ATL_NO_VTABLE CAlternateStreamContext :
 	public IShellPropSheetExt
 {
 public:
-	int iGroup;
+	int iSubItem;
 	int iItem;
 	bool sortAsc;
-private:
 	bool m_isDirectory;
 	std::wstring m_path;
 	std::vector<FileStreamData> m_streams;
@@ -56,6 +55,7 @@ public:
 	// Native
 	const std::wstring& get_path() const;
 	const std::vector<FileStreamData>& get_streams() const;
+	void reload_streams();
 	// IShellExtInit
 	STDMETHODIMP Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgId);
 	// IShellPropSheetExt

@@ -28,6 +28,8 @@
 #define IDC_BUTTON1                     220
 #define IDC_FILE_BROWSER_PATH           221
 #define IDC_EDIT1                       222
+#define IDC_CHECK1                      223
+#define IDC_CHECK_DEL_SRC               223
 #define IDC_BTN_DEL                     10000
 #define IDC_BTN_ADD                     10001
 #define IDC_IMAGE                       10002
@@ -55,7 +57,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        212
 #define _APS_NEXT_COMMAND_VALUE         32789
-#define _APS_NEXT_CONTROL_VALUE         223
+#define _APS_NEXT_CONTROL_VALUE         224
 #define _APS_NEXT_SYMED_VALUE           104
 #endif
 #endif

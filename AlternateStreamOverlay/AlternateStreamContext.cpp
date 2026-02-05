@@ -108,7 +108,6 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 		return FALSE;
 	}
 
-
 	return TRUE;
 }
 
@@ -237,19 +236,22 @@ void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)
 
 BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 {
-	INITCOMMONCONTROLSEX icc = { sizeof(icc),ICC_LISTVIEW_CLASSES };
-	InitCommonControlsEx(&icc);
-
 	PROPSHEETPAGE* ppsp = (PROPSHEETPAGE*)lParam;
 	CAlternateStreamContext* pthis = reinterpret_cast<CAlternateStreamContext*>(ppsp->lParam);
-#ifdef _WIN64
-	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)pthis);
-#else
-	SetWindowLong(hWnd, GWL_USERDATA, (LONG)pthis);
-#endif
 
 	const std::vector<FileStreamData>& streams = pthis->get_streams();
 	HWND hList = GetDlgItem(hWnd, IDC_LIST);
+
+#ifdef _WIN64
+	LONG_PTR ex = GetWindowLongPtr(hList, GWL_EXSTYLE);
+	SetWindowLongPtr(hList, GWL_EXSTYLE, ex | WS_EX_ACCEPTFILES);
+	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)pthis);
+#else
+	LONG ex = GetWindowLong(hList, GWL_EXSTYLE);
+	SetWindowLong(hList, GWL_EXSTYLE, ex | WS_EX_ACCEPTFILES);
+	SetWindowLong(hWnd, GWL_USERDATA, (LONG)pthis);
+#endif
+	DragAcceptFiles(hWnd, TRUE);
 	//SendMessage(hList, LVM_ENABLEGROUPVIEW, TRUE, 0);
 
 	ListView_SetExtendedListViewStyle(
@@ -331,7 +333,7 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	switch (msg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLongPtrW(hDlg, GWLP_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		return TRUE;
 	case WM_NOTIFY:
 	{
@@ -412,13 +414,15 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 
 DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	DLGRETURN bRet = (DLGRETURN)FALSE;
-
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		bRet = OnInitDialog(hWnd, lParam);
-		break;
+	{
+		INITCOMMONCONTROLSEX icc = { sizeof(icc),ICC_LISTVIEW_CLASSES };
+		InitCommonControlsEx(&icc);
+
+		return OnInitDialog(hWnd, lParam);
+	}
 	case WM_PAGE_RELOAD:
 	{
 		CAlternateStreamContext* pthis = get_ctx(hWnd);
@@ -431,7 +435,16 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		pthis->iItem = iItem;
 		pthis->iSubItem = -1;
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), iItem >= 0);
-		break;
+		return TRUE;
+	}
+	case WM_DROPFILES:
+	{
+		HDROP hDrop = (HDROP)wParam;
+		UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+
+		DragFinish(hDrop);
+		//MessageBoxW(hWnd, L"DROP OK", L"DEBUG", MB_OK);
+		return TRUE;
 	}
 	case WM_NOTIFY:
 	{
@@ -506,20 +519,20 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 			Command_AddStream(hWnd);
 			SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
-			break;
+			return TRUE;
 		}
 		case ID_ITEMMENU_DELETE:
 			Command_DeleteStream(hWnd);
-			break;
+			return TRUE;
 		case IDC_BTN_DEL:
 			if (wmEvent == BN_CLICKED)
 			{
 				Command_DeleteStream(hWnd);
 			}
-			break;
+			return TRUE;
 		case ID_BLANKMENU_REFRESH:
 			SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
-			break;
+			return TRUE;
 		case ID_ITEMMENU_COPY_VALUE:
 			auto ctx = get_ctx(hWnd);
 			HWND hList = GetDlgItem(hWnd, IDC_LIST);
@@ -527,12 +540,12 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			TCHAR szBuffer[MAX_PATH]{};
 			ListView_GetItemText(hList, ctx->iItem, ctx->iSubItem, szBuffer, std::size(szBuffer));
 			CopyStrToClipboard(szBuffer);
-			break;
+			return TRUE;
 		}
 		break;
 	}
 	}
-	return bRet;
+	return FALSE;
 }
 
 

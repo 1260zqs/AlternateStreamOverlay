@@ -4,34 +4,30 @@
 
 #pragma comment(lib, "Shlwapi.lib")
 
-// Static.  But we're always going to have ntdll in memory, so it's
-// no biggie....
-NTDllFuncs g_ntDllFuncs;
-
 bool hasAlternateStreams(LPCWSTR pwszPath)
 {
-	return g_ntDllFuncs.HasAlternateStreams(pwszPath);
+	return HasAlternateStreams(pwszPath);
 }
 
 std::vector<FileStreamData> listAlternateStreams(LPCWSTR pwszPath)
 {
-	return g_ntDllFuncs.ListAlternateStreams(pwszPath);
+	return ListAlternateStreams(pwszPath);
 }
 
 // Format an integer with the user's thousands separators, e.g. "15,000"
-static std::wstring FormatIntegerWithGrouping(size_t value)
-{
-	wchar_t in[32];
-	_snwprintf_s(in, _countof(in), _TRUNCATE, L"%llu", (size_t)value);
-
-	wchar_t out[64] = {};
-	// LOCALE_NAME_USER_DEFAULT requires Vista+. If you must support older Windows use GetNumberFormat.
-	if (GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, in, nullptr, out, (int)_countof(out)))
-		return std::wstring(out);
-
-	// Fallback
-	return std::to_wstring(value);
-}
+//static std::wstring FormatIntegerWithGrouping(size_t value)
+//{
+//	wchar_t in[32];
+//	_snwprintf_s(in, _countof(in), _TRUNCATE, L"%llu", (size_t)value);
+//
+//	wchar_t out[64] = {};
+//	// LOCALE_NAME_USER_DEFAULT requires Vista+. If you must support older Windows use GetNumberFormat.
+//	if (GetNumberFormatEx(LOCALE_NAME_USER_DEFAULT, 0, in, nullptr, out, (int)_countof(out)))
+//		return std::wstring(out);
+//
+//	// Fallback
+//	return std::to_wstring(value);
+//}
 
 // Returns something like: L"1.50 KB (15,000 bytes)"
 std::wstring FormatFileSizeStringKB(size_t bytes)

@@ -33,11 +33,14 @@ CAlternateStreamContext* get_ctx(HWND hWnd)
 
 void PopupLastError(HWND hWnd)
 {
-	wchar_t msg[512]{};
+	DWORD error = GetLastError();
+	if (error == ERROR_SUCCESS) return;
+
+	TCHAR msg[512]{};
 	FormatMessage(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		nullptr,
-		GetLastError(),
+		error,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		msg,
 		(DWORD)std::size(msg),
@@ -509,7 +512,7 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 				if (hit.flags & LVHT_ONITEM)
 				{
-					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtrW(hWnd, GWLP_HINSTANCE);
+					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 					HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
 					HMENU hPopup = GetSubMenu(hMenu, 0);
 
@@ -519,7 +522,7 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				}
 				else
 				{
-					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtrW(hWnd, GWLP_HINSTANCE);
+					HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 					HMENU hMenu = LoadMenu(hInst, MAKEINTRESOURCE(IDR_MENU1));
 					HMENU hPopup = GetSubMenu(hMenu, 1);
 
@@ -544,6 +547,87 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 			Command_AddStream(hWnd);
 			Command_Refresh(hWnd);
+			return TRUE;
+		}
+		case ID_ITEMMENU_OPEN:
+		{
+			auto ctx = get_ctx(hWnd);
+			HWND hList = GetDlgItem(hWnd, IDC_LIST);
+			const std::vector<FileStreamData>& streams = ctx->get_streams();
+
+			LVITEMW item{};
+			item.mask = LVIF_PARAM;
+			item.iItem = ctx->iItem;
+			if (ListView_GetItem(hList, &item))
+			{
+				if (item.lParam >= 0 && item.lParam < streams.size())
+				{
+					const FileStreamData& fs = streams[item.lParam];
+					std::wstring filePath = ctx->get_path() + fs.streamName;
+
+					HANDLE hSrc = CreateFile(
+						filePath.c_str(),
+						GENERIC_READ,
+						FILE_SHARE_READ,
+						nullptr,
+						OPEN_EXISTING,
+						FILE_ATTRIBUTE_NORMAL,
+						nullptr
+					);
+					if (hSrc == INVALID_HANDLE_VALUE)
+					{
+						PopupLastError(hWnd);
+						return TRUE;
+					}
+
+					TCHAR tempDir[MAX_PATH]{};
+					TCHAR tempFile[MAX_PATH]{};
+					GetTempPath(MAX_PATH, tempDir);
+					GetTempFileName(tempDir, L"ads", 0, tempFile);
+
+					HANDLE hDst = CreateFile(
+						tempFile,
+						GENERIC_WRITE,
+						0,
+						nullptr,
+						CREATE_ALWAYS,
+						FILE_ATTRIBUTE_TEMPORARY,
+						nullptr
+					);
+					if (hSrc == INVALID_HANDLE_VALUE)
+					{
+						CloseHandle(hSrc);
+						PopupLastError(hWnd);
+						return TRUE;
+					}
+
+
+					BYTE buffer[8 * 1024]{};
+					DWORD read = 0, written = 0;
+					while (ReadFile(hSrc, buffer, sizeof(buffer), &read, nullptr) && read)
+					{
+						if (!WriteFile(hDst, buffer, read, &written, nullptr))
+						{
+							CloseHandle(hSrc);
+							CloseHandle(hDst);
+							PopupLastError(hWnd);
+							return TRUE;
+						}
+					}
+
+					CloseHandle(hSrc);
+					CloseHandle(hDst);
+
+					ShellExecute(
+						hWnd,
+						TEXT("open"),
+						tempFile,
+						nullptr,
+						nullptr,
+						SW_SHOWNORMAL
+					);
+				}
+			}
 			return TRUE;
 		}
 		case ID_ITEMMENU_RENAME:

@@ -36,7 +36,7 @@ public:
 	}
 };
 
-typedef enum FILE_INFORMATION_CLASS
+enum FILE_INFORMATION_CLASS
 {
 	FileStreamInformation = 22,
 };

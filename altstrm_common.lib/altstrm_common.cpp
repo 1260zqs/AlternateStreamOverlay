@@ -58,7 +58,7 @@ bool HasAlternateStreams(LPCWSTR path)
 std::vector<FileStreamData> ListAlternateStreams(HANDLE hFile)
 {
 	std::unique_ptr<BYTE[]> buffer;
-	size_t size = sizeof(FILE_STREAM_INFO) * 2;
+	DWORD size = sizeof(FILE_STREAM_INFO) * 2;
 	do
 	{
 		buffer.reset(new BYTE[size]);

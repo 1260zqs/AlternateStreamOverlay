@@ -32,6 +32,7 @@ BEGIN
     POPUP "ItemMenu"
     BEGIN
         MENUITEM "Open",                        ID_ITEMMENU_OPEN
+        MENUITEM "Rename",                      ID_ITEMMENU_RENAME
         MENUITEM "Save as",                     ID_ITEMMENU_SAVEAS
         MENUITEM SEPARATOR
         MENUITEM "Copy Value",                  ID_ITEMMENU_COPY_VALUE
@@ -119,6 +120,8 @@ BEGIN
     IDS_STR_STREAM_SIZE     "大小"
     IDS_STR_ADD             "添加"
     IDS_STR_DEL             "删除"
+    IDS_STR_OPEN            "打开"
+    IDS_STR_SAVE            "保存"
     IDS_STR_STREAM_ALLOCATIONSIZE "占用空间"
     IDS_STR_STREAM          "数据流"
     IDS_STR_DESC            "备用数据流（Alternate Data Streams）是附加在文件上的 NTFS 额外数据，它们不会显示在 Windows 资源管理器中，可能用于存储附加信息。"

@@ -24,9 +24,9 @@ typedef BOOL DLGRETURN;
 CAlternateStreamContext* get_ctx(HWND hWnd)
 {
 #ifdef _WIN64
-	long lUserData = (long)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	LONG_PTR lUserData = (LONG_PTR)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 #else
-	long lUserData = (long)GetWindowLong(hWnd, GWL_USERDATA);
+	LONG lUserData = (LONG)GetWindowLong(hWnd, GWL_USERDATA);
 #endif
 	return reinterpret_cast<CAlternateStreamContext*>(lUserData);
 }
@@ -34,7 +34,7 @@ CAlternateStreamContext* get_ctx(HWND hWnd)
 void PopupLastError(HWND hWnd)
 {
 	wchar_t msg[512]{};
-	FormatMessageW(
+	FormatMessage(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		nullptr,
 		GetLastError(),
@@ -81,10 +81,10 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 		DWORD err = GetLastError();
 		if (err == ERROR_FILE_EXISTS)
 		{
-			int ret = MessageBoxW(
+			int ret = MessageBox(
 				hDlg,
-				L"An alternate data stream with the same name already exists.\nOverwrite the existing stream?",
-				L"Overwrite Stream",
+				TEXT("An alternate data stream with the same name already exists.\nOverwrite the existing stream?"),
+				TEXT("Overwrite Stream"),
 				MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
 			);
 			if (ret != IDOK)
@@ -172,14 +172,19 @@ const std::wstring& CAlternateStreamContext::get_path() const
 
 void Command_AddStream(HWND hWnd)
 {
-	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtrW(hWnd, GWLP_HINSTANCE);
-	DialogBoxParamW(
+	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
+	DialogBoxParam(
 		hInst,
 		MAKEINTRESOURCEW(IDD_DIALOG_ADD_STREAM),
 		hWnd,
 		AddStreamDlgProc,
 		(LPARAM)get_ctx(hWnd)
 	);
+}
+
+void Command_Refresh(HWND hWnd)
+{
+	SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
 }
 
 void Command_DeleteStream(HWND hWnd)
@@ -208,8 +213,8 @@ void Command_DeleteStream(HWND hWnd)
 				PopupLastError(hWnd);
 			}
 		}
+		SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
 	}
-	SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
 }
 
 void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)
@@ -243,15 +248,15 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	HWND hList = GetDlgItem(hWnd, IDC_LIST);
 
 #ifdef _WIN64
-	LONG_PTR ex = GetWindowLongPtr(hList, GWL_EXSTYLE);
-	SetWindowLongPtr(hList, GWL_EXSTYLE, ex | WS_EX_ACCEPTFILES);
-	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG)pthis);
+	//LONG_PTR ex = GetWindowLongPtr(hList, GWL_EXSTYLE);
+	//SetWindowLongPtr(hList, GWL_EXSTYLE, ex | WS_EX_ACCEPTFILES);
+	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)pthis);
 #else
 	LONG ex = GetWindowLong(hList, GWL_EXSTYLE);
 	SetWindowLong(hList, GWL_EXSTYLE, ex | WS_EX_ACCEPTFILES);
 	SetWindowLong(hWnd, GWL_USERDATA, (LONG)pthis);
 #endif
-	DragAcceptFiles(hWnd, TRUE);
+	//DragAcceptFiles(hList, TRUE);
 	//SendMessage(hList, LVM_ENABLEGROUPVIEW, TRUE, 0);
 
 	ListView_SetExtendedListViewStyle(
@@ -466,6 +471,26 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 				//	(LPARAM)pthis
 				//);
 			}
+			else if (hdr->code == LVN_KEYDOWN)
+			{
+				NMLVKEYDOWN* kd = (NMLVKEYDOWN*)lParam;
+				if (kd->wVKey == VK_DELETE)
+				{
+					HWND hList = hdr->hwndFrom;
+					CAlternateStreamContext* pthis = get_ctx(hWnd);
+					int iItem = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
+					pthis->iItem = iItem;
+					Command_DeleteStream(hWnd);
+				}
+				else if (kd->wVKey == VK_F5)
+				{
+					Command_Refresh(hWnd);
+				}
+				else if (kd->wVKey == VK_F2)
+				{
+
+				}
+			}
 			else if (hdr->code == LVN_ITEMCHANGED)
 			{
 				int iItem = ListView_GetNextItem(hList, -1, LVNI_SELECTED);
@@ -518,9 +543,11 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		case ID_BLANKMENU_ADD:
 		{
 			Command_AddStream(hWnd);
-			SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
+			Command_Refresh(hWnd);
 			return TRUE;
 		}
+		case ID_ITEMMENU_RENAME:
+			return TRUE;
 		case ID_ITEMMENU_DELETE:
 			Command_DeleteStream(hWnd);
 			return TRUE;
@@ -531,7 +558,7 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			}
 			return TRUE;
 		case ID_BLANKMENU_REFRESH:
-			SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
+			Command_Refresh(hWnd);
 			return TRUE;
 		case ID_ITEMMENU_COPY_VALUE:
 			auto ctx = get_ctx(hWnd);

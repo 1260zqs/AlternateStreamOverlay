@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by AlternateStreamOverlay.rc
+// Microsoft Visual C++ 生成的包含文件。
+// 供 AlternateStreamOverlay.rc 使用
 //
 #define IDS_PROJNAME                    100
 #define IDR_ALTERNATESTREAMOVERLAY      101
@@ -50,13 +50,14 @@
 #define ID_ITEMMENU_SAVEAS              32785
 #define ID_ITEMMENU_COPY_VALUE          32786
 #define ID_ITEMMENU_DELETE              32787
+#define ID_ITEMMENU_RENAME              32789
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        212
-#define _APS_NEXT_COMMAND_VALUE         32789
+#define _APS_NEXT_COMMAND_VALUE         32790
 #define _APS_NEXT_CONTROL_VALUE         224
 #define _APS_NEXT_SYMED_VALUE           104
 #endif

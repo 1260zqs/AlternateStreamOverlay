@@ -31,9 +31,8 @@ CAlternateStreamContext* get_ctx(HWND hWnd)
 	return reinterpret_cast<CAlternateStreamContext*>(lUserData);
 }
 
-void PopupLastError(HWND hWnd)
+void PopupError(HWND hWnd, DWORD error)
 {
-	DWORD error = GetLastError();
 	if (error == ERROR_SUCCESS) return;
 
 	TCHAR msg[512]{};
@@ -47,6 +46,11 @@ void PopupLastError(HWND hWnd)
 		nullptr
 	);
 	MessageBox(hWnd, msg, NULL, MB_ICONERROR);
+}
+
+void PopupLastError(HWND hWnd)
+{
+	PopupError(hWnd, GetLastError());
 }
 
 bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR streamName)
@@ -260,6 +264,85 @@ void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)
 	}
 }
 
+void Command_OpenStream(HWND hWnd)
+{
+	auto ctx = get_ctx(hWnd);
+	HWND hList = GetDlgItem(hWnd, IDC_LIST);
+	const std::vector<FileStreamData>& streams = ctx->get_streams();
+
+	LVITEMW item{};
+	item.mask = LVIF_PARAM;
+	item.iItem = ctx->iItem;
+	if (!ListView_GetItem(hList, &item)) return;
+
+	if (item.lParam >= 0 && item.lParam < streams.size())
+	{
+		const FileStreamData& fs = streams[item.lParam];
+		std::wstring filePath = ctx->get_path() + fs.streamName;
+
+		HANDLE hSrc = CreateFile(
+			filePath.c_str(),
+			GENERIC_READ,
+			FILE_SHARE_READ,
+			nullptr,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			nullptr
+		);
+		if (hSrc == INVALID_HANDLE_VALUE)
+		{
+			PopupLastError(hWnd);
+			return;
+		}
+
+		TCHAR tempDir[MAX_PATH]{};
+		TCHAR tempFile[MAX_PATH]{};
+		GetTempPath(MAX_PATH, tempDir);
+		GetTempFileName(tempDir, L"ads", 0, tempFile);
+
+		HANDLE hDst = CreateFile(
+			tempFile,
+			GENERIC_WRITE,
+			0,
+			nullptr,
+			CREATE_ALWAYS,
+			FILE_ATTRIBUTE_TEMPORARY,
+			nullptr
+		);
+		if (hSrc == INVALID_HANDLE_VALUE)
+		{
+			CloseHandle(hSrc);
+			PopupLastError(hWnd);
+			return;
+		}
+
+		BYTE buffer[8 * 1024]{};
+		DWORD read = 0, written = 0;
+		while (ReadFile(hSrc, buffer, sizeof(buffer), &read, nullptr) && read)
+		{
+			if (!WriteFile(hDst, buffer, read, &written, nullptr))
+			{
+				CloseHandle(hSrc);
+				CloseHandle(hDst);
+				PopupLastError(hWnd);
+				return;
+			}
+		}
+
+		CloseHandle(hSrc);
+		CloseHandle(hDst);
+
+		ShellExecute(
+			hWnd,
+			TEXT("open"),
+			tempFile,
+			nullptr,
+			nullptr,
+			SW_SHOWNORMAL
+		);
+	}
+}
+
 BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 {
 	PROPSHEETPAGE* ppsp = (PROPSHEETPAGE*)lParam;
@@ -467,7 +550,10 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	{
 		HDROP hDrop = (HDROP)wParam;
 		UINT count = DragQueryFileW(hDrop, 0xFFFFFFFF, nullptr, 0);
+		for (UINT i = 0; i < count; i++)
+		{
 
+		}
 		DragFinish(hDrop);
 		//MessageBoxW(hWnd, L"DROP OK", L"DEBUG", MB_OK);
 		return TRUE;
@@ -562,92 +648,12 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		{
 		case IDC_BTN_ADD:
 		case ID_BLANKMENU_ADD:
-		{
 			Command_AddStream(hWnd);
 			Command_Refresh(hWnd);
 			return TRUE;
-		}
 		case ID_ITEMMENU_OPEN:
-		{
-			auto ctx = get_ctx(hWnd);
-			HWND hList = GetDlgItem(hWnd, IDC_LIST);
-			const std::vector<FileStreamData>& streams = ctx->get_streams();
-
-			LVITEMW item{};
-			item.mask = LVIF_PARAM;
-			item.iItem = ctx->iItem;
-			if (ListView_GetItem(hList, &item))
-			{
-				if (item.lParam >= 0 && item.lParam < streams.size())
-				{
-					const FileStreamData& fs = streams[item.lParam];
-					std::wstring filePath = ctx->get_path() + fs.streamName;
-
-					HANDLE hSrc = CreateFile(
-						filePath.c_str(),
-						GENERIC_READ,
-						FILE_SHARE_READ,
-						nullptr,
-						OPEN_EXISTING,
-						FILE_ATTRIBUTE_NORMAL,
-						nullptr
-					);
-					if (hSrc == INVALID_HANDLE_VALUE)
-					{
-						PopupLastError(hWnd);
-						return TRUE;
-					}
-
-					TCHAR tempDir[MAX_PATH]{};
-					TCHAR tempFile[MAX_PATH]{};
-					GetTempPath(MAX_PATH, tempDir);
-					GetTempFileName(tempDir, L"ads", 0, tempFile);
-
-					HANDLE hDst = CreateFile(
-						tempFile,
-						GENERIC_WRITE,
-						0,
-						nullptr,
-						CREATE_ALWAYS,
-						FILE_ATTRIBUTE_TEMPORARY,
-						nullptr
-					);
-					if (hSrc == INVALID_HANDLE_VALUE)
-					{
-						CloseHandle(hSrc);
-						PopupLastError(hWnd);
-						return TRUE;
-					}
-
-
-					BYTE buffer[8 * 1024]{};
-					DWORD read = 0, written = 0;
-					while (ReadFile(hSrc, buffer, sizeof(buffer), &read, nullptr) && read)
-					{
-						if (!WriteFile(hDst, buffer, read, &written, nullptr))
-						{
-							CloseHandle(hSrc);
-							CloseHandle(hDst);
-							PopupLastError(hWnd);
-							return TRUE;
-						}
-					}
-
-					CloseHandle(hSrc);
-					CloseHandle(hDst);
-
-					ShellExecute(
-						hWnd,
-						TEXT("open"),
-						tempFile,
-						nullptr,
-						nullptr,
-						SW_SHOWNORMAL
-					);
-				}
-			}
+			Command_OpenStream(hWnd);
 			return TRUE;
-		}
 		case ID_ITEMMENU_RENAME:
 			return TRUE;
 		case ID_ITEMMENU_DELETE:

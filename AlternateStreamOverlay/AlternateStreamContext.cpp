@@ -10,10 +10,33 @@
 
 #define START_OF_HEX_TEXT 10
 #define START_OF_ASCII_TEXT 36
+
 #define WM_PAGE_RELOAD   (WM_APP + 1)
+#define WM_COPY_DONE     (WM_APP + 2)
+#define WM_COPY_ERROR    (WM_APP + 3)
+#define WM_COPY_PROGRESS (WM_APP + 4)
+
+#define TIMER_PROGRESS_SHOW    1
+#define TIMER_PROGRESS_UPDATE  2
+
+struct StreamCopyJob
+{
+	HWND hWnd;
+	HWND hDlg;
+	HANDLE from;
+	HANDLE to;
+	size_t total;
+	size_t written;
+	bool done;
+	bool cancel;
+	bool error;
+	DWORD code;
+};
 
 int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData);
 INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+void Commnad_StreamCopy(StreamCopyJob* job);
 
 #ifdef _WIN64
 typedef INT_PTR DLGRETURN;
@@ -117,8 +140,14 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 		return FALSE;
 	}
 
-	CloseHandle(srcHandle);
-	CloseHandle(destHandle);
+	StreamCopyJob* job = new StreamCopyJob();
+	job->from = srcHandle;
+	job->to = destHandle;
+	job->hWnd = GetParent(hDlg);
+
+	Commnad_StreamCopy(job);
+	//CloseHandle(srcHandle);
+	//CloseHandle(destHandle);
 	return TRUE;
 }
 
@@ -228,18 +257,77 @@ void Command_DeleteStream(HWND hWnd)
 	}
 }
 
-struct StreamCopyJob
+DWORD WINAPI Thread_CopyJob(LPVOID param)
 {
-	HANDLE from;
-	HANDLE to;
-	size_t total;
-	size_t written;
-	BOOL done;
-};
+	StreamCopyJob* job = (StreamCopyJob*)param;
+	job->total = 100;
+	job->written = 0;
+	for (size_t i = 0; i < job->total; i++)
+	{
+		job->written++;
+		Sleep(50);
+		OutputDebugStringA("progess");
+	}
+	OutputDebugStringA("progess done");
+	//BYTE buffer[8 * 1024]{};
+	//DWORD read = 0, written = 0;
+	//while (ReadFile(job->from, buffer, sizeof(buffer), &read, nullptr) && read)
+	//{
+	//	if (!WriteFile(job->to, buffer, read, &written, nullptr) || read != written)
+	//	{
+	//		job->error = true;
+	//		job->cancel = true;
+	//		job->code = GetLastError();
+	//	}
+	//	if (job->cancel)
+	//	{
+	//		FILE_DISPOSITION_INFO info{};
+	//		info.DeleteFile = TRUE;
+	//		SetFileInformationByHandle(
+	//			job->to,
+	//			FileDispositionInfo,
+	//			&info,
+	//			sizeof(info)
+	//		);
+	//		break;
+	//	}
+	//	job->written += written;
+	//}
+	CloseHandle(job->to);
+	CloseHandle(job->from);
+	job->done = true;
+	if (job->error)
+	{
+		PostMessage(job->hDlg, WM_COPY_ERROR, job->code, NULL);
+	}
+	else
+	{
+		PostMessage(job->hDlg, WM_COPY_DONE, NULL, NULL);
+	}
+	return 0;
+}
 
-void Commnad_StreamCopy(HWND hWnd, StreamCopyJob* job)
+void Commnad_StreamCopy(StreamCopyJob* job)
 {
-
+	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(job->hWnd, GWLP_HINSTANCE);
+	job->hDlg = CreateDialog(
+		hInst,
+		MAKEINTRESOURCE(IDD_DIALOG_PROGRESS),
+		job->hWnd,
+		ProgressDlgProc
+	);
+	SetWindowLongPtr(job->hDlg, GWLP_USERDATA, (LONG_PTR)job);
+	ShowWindow(job->hDlg, SW_SHOW);
+	
+	DWORD threadId;
+	CreateThread(
+		NULL,
+		NULL,
+		Thread_CopyJob,
+		job,
+		NULL,
+		&threadId
+	);
 }
 
 void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)
@@ -320,7 +408,7 @@ void Command_OpenStream(HWND hWnd)
 		DWORD read = 0, written = 0;
 		while (ReadFile(hSrc, buffer, sizeof(buffer), &read, nullptr) && read)
 		{
-			if (!WriteFile(hDst, buffer, read, &written, nullptr))
+			if (!WriteFile(hDst, buffer, read, &written, nullptr) || read != written)
 			{
 				CloseHandle(hSrc);
 				CloseHandle(hDst);
@@ -348,6 +436,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	PROPSHEETPAGE* ppsp = (PROPSHEETPAGE*)lParam;
 	CAlternateStreamContext* pthis = reinterpret_cast<CAlternateStreamContext*>(ppsp->lParam);
 
+	pthis->hWnd = hWnd;
 	const std::vector<FileStreamData>& streams = pthis->get_streams();
 	HWND hList = GetDlgItem(hWnd, IDC_LIST);
 
@@ -509,7 +598,7 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 
 			auto ctx = get_ctx(hDlg);
 			CopyFileToADS_Win32(hDlg, filePath, ctx->get_path().c_str(), streamName);
-			EndDialog(hDlg, IDOK);
+			//EndDialog(hDlg, IDOK);
 			return TRUE;
 		}
 		case IDCANCEL:
@@ -518,6 +607,80 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 	}
+	return FALSE;
+}
+
+INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	OutputDebugStringA("ProgressDlgProc");
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+	{
+		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		if (job->done)
+		{
+			DestroyWindow(hDlg);
+			break;
+		}
+		OutputDebugStringA("progess init");
+		SetTimer(hDlg, TIMER_PROGRESS_SHOW, 300, NULL);
+		return TRUE;
+	}
+	case WM_TIMER:
+		if (wParam == TIMER_PROGRESS_SHOW)
+		{
+			OutputDebugStringA("progess show");
+
+			ShowWindow(hDlg, SW_SHOW);
+			UpdateWindow(hDlg);
+			KillTimer(hDlg, TIMER_PROGRESS_SHOW);
+			SetTimer(hDlg, TIMER_PROGRESS_UPDATE, 100, NULL);
+		}
+		else if (wParam == TIMER_PROGRESS_UPDATE)
+		{
+			OutputDebugStringA("progess update");
+			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+
+			int percent = (int)((job->written * 100) / job->total);
+			SendDlgItemMessage(
+				hDlg,
+				IDC_PROGRESS1,
+				PBM_SETPOS,
+				percent,
+				0
+			);
+		}
+		break;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDCANCEL)
+		{
+			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+			job->cancel = true;
+			return TRUE;
+		}
+		break;
+	case WM_COPY_PROGRESS:
+		
+		return TRUE;
+	case WM_COPY_ERROR:
+		PopupError(hDlg, wParam);
+		return TRUE;
+	case WM_COPY_DONE:
+		DestroyWindow(hDlg);
+		return TRUE;
+	case WM_CLOSE:
+	{
+		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		job->cancel = true;
+		return TRUE;
+	}
+	case WM_DESTROY:
+		KillTimer(hDlg, TIMER_PROGRESS_SHOW);
+		KillTimer(hDlg, TIMER_PROGRESS_UPDATE);
+		break;
+	}
+
 	return FALSE;
 }
 

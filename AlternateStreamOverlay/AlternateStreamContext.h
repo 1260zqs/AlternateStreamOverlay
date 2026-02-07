@@ -24,6 +24,7 @@ public:
 	int iItem;
 	bool sortAsc;
 	bool m_isDirectory;
+	HWND hWnd;
 	std::wstring m_path;
 	std::vector<FileStreamData> m_streams;
 public:

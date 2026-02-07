@@ -102,7 +102,7 @@ std::vector<FileStreamData> ListAlternateStreams(HANDLE hFile)
 
 std::vector<FileStreamData> ListAlternateStreams(LPCWSTR path)
 {
-	HandleW hFile = ::CreateFile(
+	HANDLE hFile = ::CreateFile(
 		path,
 		0,
 		FILE_SHARE_READ,
@@ -116,5 +116,7 @@ std::vector<FileStreamData> ListAlternateStreams(LPCWSTR path)
 		return {};
 	}
 
-	return ListAlternateStreams(hFile);
+	std::vector<FileStreamData> list = ListAlternateStreams(hFile);
+	CloseHandle(hFile);
+	return list;
 }

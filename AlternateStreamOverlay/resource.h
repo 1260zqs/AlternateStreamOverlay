@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ 生成的包含文件。
-// 供 AlternateStreamOverlay.rc 使用
+// Microsoft Visual C++ generated include file.
+// Used by AlternateStreamOverlay.rc
 //
 #define IDS_PROJNAME                    100
 #define IDR_ALTERNATESTREAMOVERLAY      101
@@ -20,6 +20,8 @@
 #define IDI_ICON1                       209
 #define IDI_IMAGE1                      209
 #define IDD_DIALOG_ADD_STREAM           210
+#define IDD_DIALOG1                     212
+#define IDD_DIALOG_PROGRESS             212
 #define IDC_DESC                        215
 #define IDC_EDIT_NAME                   216
 #define IDC_BTN_CREATE_STREAM           217
@@ -56,7 +58,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        212
+#define _APS_NEXT_RESOURCE_VALUE        214
 #define _APS_NEXT_COMMAND_VALUE         32790
 #define _APS_NEXT_CONTROL_VALUE         224
 #define _APS_NEXT_SYMED_VALUE           104

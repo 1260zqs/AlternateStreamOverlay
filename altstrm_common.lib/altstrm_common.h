@@ -14,27 +14,27 @@ struct FileStreamData {
 	LARGE_INTEGER streamAllocationSize;
 };
 
-class HandleW
-{
-	HANDLE handle;
-public:
-	HandleW(HANDLE hnd)
-	{
-		handle = hnd;
-	}
-	~HandleW()
-	{
-		if (handle != INVALID_HANDLE_VALUE) close();
-	}
-	void close()
-	{
-		::CloseHandle(handle);
-	}
-	operator HANDLE()
-	{
-		return handle;
-	}
-};
+//class HandleW
+//{
+//	HANDLE handle;
+//public:
+//	HandleW(HANDLE hnd)
+//	{
+//		handle = hnd;
+//	}
+//	~HandleW()
+//	{
+//		if (handle != INVALID_HANDLE_VALUE) close();
+//	}
+//	void close()
+//	{
+//		::CloseHandle(handle);
+//	}
+//	operator HANDLE()
+//	{
+//		return handle;
+//	}
+//};
 
 enum FILE_INFORMATION_CLASS
 {

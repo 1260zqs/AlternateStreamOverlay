@@ -51,7 +51,7 @@ void PopupLastError(HWND hWnd)
 
 bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR streamName)
 {
-	HandleW srcHandle(::CreateFile(
+	HANDLE srcHandle(::CreateFile(
 		srcFile,
 		GENERIC_READ,
 		FILE_SHARE_READ,
@@ -70,7 +70,7 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 	ss << hostFile << ':' << streamName;
 	std::wstring full_path = ss.str();
 
-	HandleW destHandle(::CreateFile(
+	HANDLE destHandle = ::CreateFile(
 		full_path.c_str(),
 		GENERIC_WRITE,
 		FILE_SHARE_READ,
@@ -78,7 +78,7 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 		CREATE_NEW,
 		FILE_ATTRIBUTE_NORMAL,
 		NULL
-	));
+	);
 	if (destHandle == INVALID_HANDLE_VALUE)
 	{
 		DWORD err = GetLastError();
@@ -92,9 +92,10 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 			);
 			if (ret != IDOK)
 			{
+				CloseHandle(srcHandle);
 				return FALSE;
 			}
-			destHandle = HandleW(::CreateFile(
+			destHandle = ::CreateFile(
 				full_path.c_str(),
 				GENERIC_WRITE,
 				FILE_SHARE_READ,
@@ -102,15 +103,18 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 				CREATE_ALWAYS,
 				FILE_ATTRIBUTE_NORMAL,
 				NULL
-			));
+			);
 		}
 	}
 	if (destHandle == INVALID_HANDLE_VALUE)
 	{
+		CloseHandle(srcHandle);
 		PopupLastError(hDlg);
 		return FALSE;
 	}
 
+	CloseHandle(srcHandle);
+	CloseHandle(destHandle);
 	return TRUE;
 }
 
@@ -218,6 +222,20 @@ void Command_DeleteStream(HWND hWnd)
 		}
 		SendMessage(hWnd, WM_PAGE_RELOAD, NULL, NULL);
 	}
+}
+
+struct StreamCopyJob
+{
+	HANDLE from;
+	HANDLE to;
+	size_t total;
+	size_t written;
+	BOOL done;
+};
+
+void Commnad_StreamCopy(HWND hWnd, StreamCopyJob* job)
+{
+
 }
 
 void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)

@@ -12,9 +12,7 @@
 #define START_OF_ASCII_TEXT 36
 
 #define WM_PAGE_RELOAD   (WM_APP + 1)
-#define WM_COPY_DONE     (WM_APP + 2)
-#define WM_COPY_ERROR    (WM_APP + 3)
-#define WM_COPY_PROGRESS (WM_APP + 4)
+#define WM_PROGRESS_DONE (WM_APP + 2)
 
 #define TIMER_PROGRESS_SHOW    1
 #define TIMER_PROGRESS_UPDATE  2
@@ -36,7 +34,9 @@ struct StreamCopyJob
 int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData);
 INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-void Commnad_StreamCopy(StreamCopyJob* job);
+void Commnad_StreamCopy(HINSTANCE hInst, StreamCopyJob* job);
+
+#define var auto
 
 #ifdef _WIN64
 typedef INT_PTR DLGRETURN;
@@ -47,11 +47,11 @@ typedef BOOL DLGRETURN;
 CAlternateStreamContext* get_ctx(HWND hWnd)
 {
 #ifdef _WIN64
-	LONG_PTR lUserData = (LONG_PTR)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+	LONG_PTR userData = (LONG_PTR)GetWindowLongPtr(hWnd, GWLP_USERDATA);
 #else
-	LONG lUserData = (LONG)GetWindowLong(hWnd, GWL_USERDATA);
+	LONG userData = (LONG)GetWindowLong(hWnd, GWL_USERDATA);
 #endif
-	return reinterpret_cast<CAlternateStreamContext*>(lUserData);
+	return (CAlternateStreamContext*)userData;
 }
 
 void PopupError(HWND hWnd, DWORD error)
@@ -76,7 +76,7 @@ void PopupLastError(HWND hWnd)
 	PopupError(hWnd, GetLastError());
 }
 
-bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR streamName)
+bool CopyFileToADS_Win32(HINSTANCE hInst, HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR streamName)
 {
 	HANDLE srcHandle(::CreateFile(
 		srcFile,
@@ -140,12 +140,13 @@ bool CopyFileToADS_Win32(HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR s
 		return FALSE;
 	}
 
+	EnableWindow(hDlg, FALSE);
 	StreamCopyJob* job = new StreamCopyJob();
 	job->from = srcHandle;
 	job->to = destHandle;
-	job->hWnd = GetParent(hDlg);
-
-	Commnad_StreamCopy(job);
+	job->hWnd = hDlg;
+	Commnad_StreamCopy(hInst, job);
+	//Commnad_StreamCopy(job);
 	//CloseHandle(srcHandle);
 	//CloseHandle(destHandle);
 	return TRUE;
@@ -163,11 +164,10 @@ STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IData
 	}
 
 	hDrop = (HDROP)GlobalLock(stg.hGlobal);
-
 	if (NULL == hDrop) return E_INVALIDARG;
 
-	UINT uNumFiles = DragQueryFile(hDrop, 0xffffffff, NULL, 0);
 	HRESULT hr = S_OK;
+	UINT uNumFiles = DragQueryFile(hDrop, 0xffffffff, NULL, 0);
 	// We only handle single file case.
 	if (1 != uNumFiles)
 	{
@@ -185,14 +185,17 @@ STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IData
 	GlobalUnlock(stg.hGlobal);
 	ReleaseStgMedium(&stg);
 
-	bool directory = PathIsDirectory(szFile) != FALSE;
 	if (FAILED(hr)) return hr;
 
 	m_path = szFile;
-	m_isDirectory = directory;
+	m_isDirectory = PathIsDirectory(szFile);
 	m_streams = listAlternateStreams(szFile);
 
 	return hr;
+}
+HINSTANCE CAlternateStreamContext::GetResourceInstance()
+{
+	return _AtlBaseModule.GetResourceInstance();
 }
 
 const std::vector<FileStreamData>& CAlternateStreamContext::get_streams() const
@@ -205,9 +208,9 @@ void CAlternateStreamContext::reload_streams()
 	m_streams = listAlternateStreams(m_path.c_str());
 }
 
-const std::wstring& CAlternateStreamContext::get_path() const
+LPCWSTR CAlternateStreamContext::get_path() const
 {
-	return m_path;
+	return m_path.c_str();
 }
 
 void Command_AddStream(HWND hWnd)
@@ -260,65 +263,69 @@ void Command_DeleteStream(HWND hWnd)
 DWORD WINAPI Thread_CopyJob(LPVOID param)
 {
 	StreamCopyJob* job = (StreamCopyJob*)param;
-	job->total = 100;
+	job->total = 0;
 	job->written = 0;
-	for (size_t i = 0; i < job->total; i++)
+
+	LARGE_INTEGER size;
+	if (GetFileSizeEx(job->from, &size))
 	{
-		job->written++;
-		Sleep(50);
-		OutputDebugStringA("progess");
+		job->total = size.QuadPart;
 	}
-	OutputDebugStringA("progess done");
-	//BYTE buffer[8 * 1024]{};
-	//DWORD read = 0, written = 0;
-	//while (ReadFile(job->from, buffer, sizeof(buffer), &read, nullptr) && read)
+
+	//for (size_t i = 0; i < job->total; i++)
 	//{
-	//	if (!WriteFile(job->to, buffer, read, &written, nullptr) || read != written)
-	//	{
-	//		job->error = true;
-	//		job->cancel = true;
-	//		job->code = GetLastError();
-	//	}
+	//	job->written++;
+	//	Sleep(50);
+	//	OutputDebugStringA("progess");
 	//	if (job->cancel)
 	//	{
-	//		FILE_DISPOSITION_INFO info{};
-	//		info.DeleteFile = TRUE;
-	//		SetFileInformationByHandle(
-	//			job->to,
-	//			FileDispositionInfo,
-	//			&info,
-	//			sizeof(info)
-	//		);
 	//		break;
 	//	}
-	//	job->written += written;
 	//}
+	//OutputDebugStringA("progess done");
+	BYTE buffer[8 * 1024]{};
+	DWORD read = 0, written = 0;
+	while (ReadFile(job->from, buffer, sizeof(buffer), &read, nullptr) && read)
+	{
+		if (!WriteFile(job->to, buffer, read, &written, nullptr) || read != written)
+		{
+			job->error = true;
+			job->cancel = true;
+			job->code = GetLastError();
+		}
+		if (job->cancel)
+		{
+			FILE_DISPOSITION_INFO info{};
+			info.DeleteFile = TRUE;
+			SetFileInformationByHandle(
+				job->to,
+				FileDispositionInfo,
+				&info,
+				sizeof(info)
+			);
+			break;
+		}
+		job->written += written;
+	}
 	CloseHandle(job->to);
 	CloseHandle(job->from);
+
 	job->done = true;
-	if (job->error)
-	{
-		PostMessage(job->hDlg, WM_COPY_ERROR, job->code, NULL);
-	}
-	else
-	{
-		PostMessage(job->hDlg, WM_COPY_DONE, NULL, NULL);
-	}
+	PostMessage(job->hDlg, WM_PROGRESS_DONE, NULL, (LPARAM)job);
 	return 0;
 }
 
-void Commnad_StreamCopy(StreamCopyJob* job)
+void Commnad_StreamCopy(HINSTANCE hInst, StreamCopyJob* job)
 {
-	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(job->hWnd, GWLP_HINSTANCE);
-	job->hDlg = CreateDialog(
+	job->hDlg = CreateDialogParam(
 		hInst,
 		MAKEINTRESOURCE(IDD_DIALOG_PROGRESS),
 		job->hWnd,
-		ProgressDlgProc
+		ProgressDlgProc,
+		(LPARAM)job
 	);
-	SetWindowLongPtr(job->hDlg, GWLP_USERDATA, (LONG_PTR)job);
-	ShowWindow(job->hDlg, SW_SHOW);
-	
+	ShowWindow(job->hDlg, SW_HIDE);
+
 	DWORD threadId;
 	CreateThread(
 		NULL,
@@ -436,7 +443,6 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 	PROPSHEETPAGE* ppsp = (PROPSHEETPAGE*)lParam;
 	CAlternateStreamContext* pthis = reinterpret_cast<CAlternateStreamContext*>(ppsp->lParam);
 
-	pthis->hWnd = hWnd;
 	const std::vector<FileStreamData>& streams = pthis->get_streams();
 	HWND hList = GetDlgItem(hWnd, IDC_LIST);
 
@@ -538,14 +544,21 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 		LPNMHDR hdr = (LPNMHDR)lParam;
 		if (hdr->idFrom == IDC_EDIT_NAME)
 		{
-			if (hdr->code == TTN_GETDISPINFOW)
-			{
-				NMTTDISPINFOW* info = (NMTTDISPINFOW*)lParam;
-				info->lpszText = (LPWSTR)L"Invalid stream name";
-				return TRUE;
-			}
+
 		}
 		break;
+	}
+	case WM_PROGRESS_DONE:
+	{
+		EnableWindow(hDlg, TRUE);
+		OutputDebugStringA("WM_PROGRESS_DONE");
+		StreamCopyJob* job = (StreamCopyJob*)lParam;
+		if (!(job->error || job->cancel))
+		{
+			EndDialog(hDlg, 0);
+		}
+		delete job;
+		return TRUE;
 	}
 	case WM_COMMAND:
 		switch (LOWORD(wParam))
@@ -584,7 +597,6 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 				MessageBox(hDlg, TEXT("File path is empty."), NULL, MB_ICONERROR);
 				return TRUE;
 			}
-
 			if (!streamName[0] || PathCleanupSpec(NULL, streamName))
 			{
 				HWND hEdit = GetDlgItem(hDlg, IDC_EDIT_NAME);
@@ -597,7 +609,8 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 			}
 
 			auto ctx = get_ctx(hDlg);
-			CopyFileToADS_Win32(hDlg, filePath, ctx->get_path().c_str(), streamName);
+			HINSTANCE hInst = ctx->GetResourceInstance();
+			CopyFileToADS_Win32(hInst, hDlg, filePath, ctx->get_path(), streamName);
 			//EndDialog(hDlg, IDOK);
 			return TRUE;
 		}
@@ -612,73 +625,83 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 
 INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	OutputDebugStringA("ProgressDlgProc");
 	switch (msg)
 	{
 	case WM_INITDIALOG:
 	{
-		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		StreamCopyJob* job = (StreamCopyJob*)lParam;
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		if (job->done)
 		{
 			DestroyWindow(hDlg);
 			break;
 		}
-		OutputDebugStringA("progess init");
-		SetTimer(hDlg, TIMER_PROGRESS_SHOW, 300, NULL);
+		SetTimer(hDlg, TIMER_PROGRESS_SHOW, 200, NULL);
 		return TRUE;
 	}
 	case WM_TIMER:
 		if (wParam == TIMER_PROGRESS_SHOW)
 		{
-			OutputDebugStringA("progess show");
-
 			ShowWindow(hDlg, SW_SHOW);
-			UpdateWindow(hDlg);
 			KillTimer(hDlg, TIMER_PROGRESS_SHOW);
-			SetTimer(hDlg, TIMER_PROGRESS_UPDATE, 100, NULL);
+			SetTimer(hDlg, TIMER_PROGRESS_UPDATE, 33, NULL);
+			return TRUE;
 		}
 		else if (wParam == TIMER_PROGRESS_UPDATE)
 		{
 			OutputDebugStringA("progess update");
 			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-
-			int percent = (int)((job->written * 100) / job->total);
-			SendDlgItemMessage(
-				hDlg,
-				IDC_PROGRESS1,
-				PBM_SETPOS,
-				percent,
-				0
-			);
+			if (job)
+			{
+				int percent = 0;
+				if (job->total > 0)
+				{
+					percent = (int)((job->written * 100) / job->total);
+				}
+				SendDlgItemMessage(hDlg, IDC_PROGRESS1, PBM_SETPOS, percent, 0);
+			}
+			return TRUE;
 		}
 		break;
+	case WM_PROGRESS_DONE:
+	{
+		OutputDebugStringA("progess WM_PROGRESS_DONE");
+		StreamCopyJob* job = (StreamCopyJob*)lParam;
+		if (job->error)
+		{
+			PopupError(hDlg, job->code);
+		}
+		DestroyWindow(hDlg);
+		return TRUE;
+	}
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDCANCEL)
 		{
+			OutputDebugStringA("progess IDCANCEL");
 			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			job->cancel = true;
 			return TRUE;
 		}
 		break;
-	case WM_COPY_PROGRESS:
-		
-		return TRUE;
-	case WM_COPY_ERROR:
-		PopupError(hDlg, wParam);
-		return TRUE;
-	case WM_COPY_DONE:
-		DestroyWindow(hDlg);
-		return TRUE;
 	case WM_CLOSE:
 	{
+		OutputDebugStringA("progess WM_CLOSE");
 		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 		job->cancel = true;
 		return TRUE;
 	}
 	case WM_DESTROY:
+	{
+		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		if (job)
+		{
+			PostMessage(job->hWnd, WM_PROGRESS_DONE, NULL, (LPARAM)job);
+			OutputDebugStringA("progess WM_DESTROY");
+		}
 		KillTimer(hDlg, TIMER_PROGRESS_SHOW);
 		KillTimer(hDlg, TIMER_PROGRESS_UPDATE);
 		break;
+	}
 	}
 
 	return FALSE;
@@ -853,7 +876,7 @@ STDMETHODIMP CAlternateStreamContext::AddPages(LPFNSVADDPROPSHEETPAGE pfnAddPage
 	HPROPSHEETPAGE hPage;
 	psp.dwSize = sizeof(PROPSHEETPAGE);
 	psp.dwFlags = PSP_USETITLE | PSP_USECALLBACK;
-	psp.hInstance = _AtlBaseModule.GetResourceInstance();
+	psp.hInstance = GetResourceInstance();
 	psp.pszTemplate = MAKEINTRESOURCE(IDD_PROPPAGE_MEDIUM);
 	psp.pfnCallback = PropPageCallbackProc;
 	psp.pfnDlgProc = PropPageProc;

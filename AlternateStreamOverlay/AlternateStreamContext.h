@@ -24,7 +24,6 @@ public:
 	int iItem;
 	bool sortAsc;
 	bool m_isDirectory;
-	HWND hWnd;
 	std::wstring m_path;
 	std::vector<FileStreamData> m_streams;
 public:
@@ -54,9 +53,11 @@ END_COM_MAP()
 
 public:
 	// Native
-	const std::wstring& get_path() const;
+	LPCWSTR get_path() const;
 	const std::vector<FileStreamData>& get_streams() const;
 	void reload_streams();
+
+	HINSTANCE GetResourceInstance();
 	// IShellExtInit
 	STDMETHODIMP Initialize(LPCITEMIDLIST pidlFolder, IDataObject *pdtobj, HKEY hkeyProgId);
 	// IShellPropSheetExt

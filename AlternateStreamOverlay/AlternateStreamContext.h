@@ -55,7 +55,7 @@ public:
 	// Native
 	LPCWSTR get_path() const;
 	const std::vector<FileStreamData>& get_streams() const;
-	void reload_streams();
+	void read_streams();
 
 	HINSTANCE GetResourceInstance();
 	// IShellExtInit

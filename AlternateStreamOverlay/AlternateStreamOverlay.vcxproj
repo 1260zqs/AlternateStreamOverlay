@@ -82,7 +82,7 @@
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>$(Platform)\$(Configuration)\bin</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <IgnoreImportLibrary>true</IgnoreImportLibrary>
     <LinkIncremental>true</LinkIncremental>
@@ -305,6 +305,7 @@ explorer /select,c:\appverifUI.dll</Command>
       </PrecompiledHeader>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</CompileAsManaged>
     </ClCompile>
+    <ClCompile Include="altstrm_common.cpp" />
     <ClCompile Include="Common.cpp" />
     <ClCompile Include="dlldatax.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -354,6 +355,7 @@ explorer /select,c:\appverifUI.dll</Command>
     <ClInclude Include="AlternateStreamContext.h" />
     <ClInclude Include="AlternateStreamOverlayIcon.h" />
     <ClInclude Include="AlternateStreamOverlay_i.h" />
+    <ClInclude Include="altstrm_common.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="dlldatax.h" />
     <ClInclude Include="dllmain.h" />

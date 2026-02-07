@@ -43,6 +43,9 @@
     <ClCompile Include="AlternateStreamOverlay_i.c">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="altstrm_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="AlternateStreamOverlay.def">
@@ -90,6 +93,9 @@
     </ClInclude>
     <ClInclude Include="AlternateStreamOverlay_i.h">
       <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="altstrm_common.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

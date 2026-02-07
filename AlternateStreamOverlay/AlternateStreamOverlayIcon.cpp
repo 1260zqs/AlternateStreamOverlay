@@ -12,7 +12,7 @@ CAlternateStreamOverlayIcon::CAlternateStreamOverlayIcon()
 // Does this overlay apply?
 STDMETHODIMP CAlternateStreamOverlayIcon::IsMemberOf(LPCWSTR pwszPath, DWORD dwAttrib)
 {
-	return hasAlternateStreams(pwszPath) ? S_OK : S_FALSE;
+	return HasAlternateStreams(pwszPath) ? S_OK : S_FALSE;
 }
 
 STDMETHODIMP CAlternateStreamOverlayIcon::GetOverlayInfo(LPWSTR pwszIconFile, int cchMax, int * pIndex, DWORD * pdwFlags)

@@ -17,24 +17,36 @@
 #define TIMER_PROGRESS_SHOW    1
 #define TIMER_PROGRESS_UPDATE  2
 
-struct StreamCopyJob
+#define JOB_OPEN_FILE     1
+#define JOB_CREATE_STREAM 2
+
+#ifdef DEBUG
+#define log(msg) OutputDebugStringA(msg);
+#else
+#define log(msg)
+#endif
+
+struct FileCopyJob
 {
+	DWORD id;
 	HWND hWnd;
 	HWND hDlg;
-	HANDLE from;
-	HANDLE to;
-	size_t total;
-	size_t written;
-	bool done;
-	bool cancel;
-	bool error;
-	DWORD code;
+	std::wstring from;
+	std::wstring to;
+
+	size_t TotalFileSize;
+	size_t TotalBytesTransferred;
+
+	BOOL finish;
+	BOOL aborted;
+	BOOL failed;
+	DWORD error;
 };
 
 int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData);
 INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
-void Commnad_StreamCopy(HINSTANCE hInst, StreamCopyJob* job);
+void StartFileCopyJob(HINSTANCE hInst, FileCopyJob* job);
 
 #define var auto
 
@@ -76,79 +88,33 @@ void PopupLastError(HWND hWnd)
 	PopupError(hWnd, GetLastError());
 }
 
-bool CopyFileToADS_Win32(HINSTANCE hInst, HWND hDlg, LPCWSTR srcFile, LPCWSTR hostFile, LPCWSTR streamName)
+BOOL CreateStreamIfUserWantsTo(HWND hDlg, LPCWSTR filename)
 {
-	HANDLE srcHandle(::CreateFile(
-		srcFile,
+	HANDLE handle = ::CreateFile(
+		filename,
 		GENERIC_READ,
-		FILE_SHARE_READ,
-		NULL,
+		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+		nullptr,
 		OPEN_EXISTING,
-		FILE_FLAG_SEQUENTIAL_SCAN,
-		NULL
-	));
-	if (srcHandle == INVALID_HANDLE_VALUE)
-	{
-		PopupLastError(hDlg);
-		return FALSE;
-	}
-
-	std::wstringstream ss;
-	ss << hostFile << ':' << streamName;
-	std::wstring full_path = ss.str();
-
-	HANDLE destHandle = ::CreateFile(
-		full_path.c_str(),
-		GENERIC_WRITE,
-		FILE_SHARE_READ,
-		NULL,
-		CREATE_NEW,
 		FILE_ATTRIBUTE_NORMAL,
-		NULL
+		nullptr
 	);
-	if (destHandle == INVALID_HANDLE_VALUE)
+
+	if (handle != INVALID_HANDLE_VALUE)
 	{
-		DWORD err = GetLastError();
-		if (err == ERROR_FILE_EXISTS)
+		CloseHandle(handle);
+		int ret = MessageBox(
+			hDlg,
+			TEXT("An alternate data stream with the same name already exists.\nOverwrite the existing stream?"),
+			TEXT("Overwrite Stream"),
+			MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
+		);
+		if (ret != IDOK)
 		{
-			int ret = MessageBox(
-				hDlg,
-				TEXT("An alternate data stream with the same name already exists.\nOverwrite the existing stream?"),
-				TEXT("Overwrite Stream"),
-				MB_ICONWARNING | MB_OKCANCEL | MB_DEFBUTTON2
-			);
-			if (ret != IDOK)
-			{
-				CloseHandle(srcHandle);
-				return FALSE;
-			}
-			destHandle = ::CreateFile(
-				full_path.c_str(),
-				GENERIC_WRITE,
-				FILE_SHARE_READ,
-				NULL,
-				CREATE_ALWAYS,
-				FILE_ATTRIBUTE_NORMAL,
-				NULL
-			);
+			return FALSE;
 		}
 	}
-	if (destHandle == INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(srcHandle);
-		PopupLastError(hDlg);
-		return FALSE;
-	}
 
-	EnableWindow(hDlg, FALSE);
-	StreamCopyJob* job = new StreamCopyJob();
-	job->from = srcHandle;
-	job->to = destHandle;
-	job->hWnd = hDlg;
-	Commnad_StreamCopy(hInst, job);
-	//Commnad_StreamCopy(job);
-	//CloseHandle(srcHandle);
-	//CloseHandle(destHandle);
 	return TRUE;
 }
 
@@ -186,10 +152,14 @@ STDMETHODIMP CAlternateStreamContext::Initialize(LPCITEMIDLIST pidlFolder, IData
 	ReleaseStgMedium(&stg);
 
 	if (FAILED(hr)) return hr;
+	if (!IsOnNTFS(szFile))
+	{
+		return E_INVALIDARG;
+	}
 
 	m_path = szFile;
 	m_isDirectory = PathIsDirectory(szFile);
-	m_streams = listAlternateStreams(szFile);
+	read_streams();
 
 	return hr;
 }
@@ -203,9 +173,9 @@ const std::vector<FileStreamData>& CAlternateStreamContext::get_streams() const
 	return m_streams;
 }
 
-void CAlternateStreamContext::reload_streams()
+void CAlternateStreamContext::read_streams()
 {
-	m_streams = listAlternateStreams(m_path.c_str());
+	m_streams = ListAlternateStreams(m_path.c_str());
 }
 
 LPCWSTR CAlternateStreamContext::get_path() const
@@ -260,62 +230,52 @@ void Command_DeleteStream(HWND hWnd)
 	}
 }
 
-DWORD WINAPI Thread_CopyJob(LPVOID param)
+
+static DWORD CALLBACK JobProgressRoutine(
+	LARGE_INTEGER TotalFileSize,
+	LARGE_INTEGER TotalBytesTransferred,
+	LARGE_INTEGER StreamSize,
+	LARGE_INTEGER StreamBytesTransferred,
+	DWORD dwStreamNumber,
+	DWORD dwCallbackReason,
+	HANDLE hSourceFile,
+	HANDLE hDestinationFile,
+	LPVOID lpData)
 {
-	StreamCopyJob* job = (StreamCopyJob*)param;
-	job->total = 0;
-	job->written = 0;
-
-	LARGE_INTEGER size;
-	if (GetFileSizeEx(job->from, &size))
+	if (dwCallbackReason == CALLBACK_CHUNK_FINISHED)
 	{
-		job->total = size.QuadPart;
+		log("progess update");
+		FileCopyJob* job = (FileCopyJob*)lpData;
+		job->TotalFileSize = TotalFileSize.QuadPart;
+		job->TotalBytesTransferred = TotalBytesTransferred.QuadPart;
 	}
 
-	//for (size_t i = 0; i < job->total; i++)
-	//{
-	//	job->written++;
-	//	Sleep(50);
-	//	OutputDebugStringA("progess");
-	//	if (job->cancel)
-	//	{
-	//		break;
-	//	}
-	//}
-	//OutputDebugStringA("progess done");
-	BYTE buffer[8 * 1024]{};
-	DWORD read = 0, written = 0;
-	while (ReadFile(job->from, buffer, sizeof(buffer), &read, nullptr) && read)
-	{
-		if (!WriteFile(job->to, buffer, read, &written, nullptr) || read != written)
-		{
-			job->error = true;
-			job->cancel = true;
-			job->code = GetLastError();
-		}
-		if (job->cancel)
-		{
-			FILE_DISPOSITION_INFO info{};
-			info.DeleteFile = TRUE;
-			SetFileInformationByHandle(
-				job->to,
-				FileDispositionInfo,
-				&info,
-				sizeof(info)
-			);
-			break;
-		}
-		job->written += written;
-	}
-	CloseHandle(job->to);
-	CloseHandle(job->from);
+	return PROGRESS_CONTINUE;
+}
 
-	job->done = true;
+static DWORD WINAPI FileCopyJob_WorkerThread(LPVOID param)
+{
+	FileCopyJob* job = (FileCopyJob*)param;
+	BOOL ok = CopyFileEx(
+		job->from.c_str(),
+		job->to.c_str(),
+		JobProgressRoutine,
+		job,
+		&job->aborted,
+		0
+	);
+	if (!ok)
+	{
+		job->failed = TRUE;
+		job->error = GetLastError();
+	}
+	log("progess done");
+	job->finish = TRUE;
 	PostMessage(job->hDlg, WM_PROGRESS_DONE, NULL, (LPARAM)job);
 	return 0;
 }
 
-void Commnad_StreamCopy(HINSTANCE hInst, StreamCopyJob* job)
+void StartFileCopyJob(HINSTANCE hInst, FileCopyJob* job)
 {
 	job->hDlg = CreateDialogParam(
 		hInst,
@@ -330,7 +290,7 @@ void Commnad_StreamCopy(HINSTANCE hInst, StreamCopyJob* job)
 	CreateThread(
 		NULL,
 		NULL,
-		Thread_CopyJob,
+		FileCopyJob_WorkerThread,
 		job,
 		NULL,
 		&threadId
@@ -373,9 +333,9 @@ void Command_OpenStream(HWND hWnd)
 	if (item.lParam >= 0 && item.lParam < streams.size())
 	{
 		const FileStreamData& fs = streams[item.lParam];
-		std::wstring filePath = ctx->get_path() + fs.streamName;
+		std::wstring filePath = ctx->m_path + fs.streamName;
 
-		HANDLE hSrc = CreateFile(
+		HANDLE handle = CreateFile(
 			filePath.c_str(),
 			GENERIC_READ,
 			FILE_SHARE_READ,
@@ -384,57 +344,26 @@ void Command_OpenStream(HWND hWnd)
 			FILE_ATTRIBUTE_NORMAL,
 			nullptr
 		);
-		if (hSrc == INVALID_HANDLE_VALUE)
+		if (handle == INVALID_HANDLE_VALUE)
 		{
 			PopupLastError(hWnd);
 			return;
 		}
+		CloseHandle(handle);
 
 		TCHAR tempDir[MAX_PATH]{};
 		TCHAR tempFile[MAX_PATH]{};
 		GetTempPath(MAX_PATH, tempDir);
 		GetTempFileName(tempDir, L"ads", 0, tempFile);
 
-		HANDLE hDst = CreateFile(
-			tempFile,
-			GENERIC_WRITE,
-			0,
-			nullptr,
-			CREATE_ALWAYS,
-			FILE_ATTRIBUTE_TEMPORARY,
-			nullptr
-		);
-		if (hSrc == INVALID_HANDLE_VALUE)
-		{
-			CloseHandle(hSrc);
-			PopupLastError(hWnd);
-			return;
-		}
+		HINSTANCE hInst = ctx->GetResourceInstance();
+		FileCopyJob* job = new FileCopyJob();
+		job->id = JOB_OPEN_FILE;
+		job->from = filePath;
+		job->to = tempFile;
+		job->hWnd = hWnd;
 
-		BYTE buffer[8 * 1024]{};
-		DWORD read = 0, written = 0;
-		while (ReadFile(hSrc, buffer, sizeof(buffer), &read, nullptr) && read)
-		{
-			if (!WriteFile(hDst, buffer, read, &written, nullptr) || read != written)
-			{
-				CloseHandle(hSrc);
-				CloseHandle(hDst);
-				PopupLastError(hWnd);
-				return;
-			}
-		}
-
-		CloseHandle(hSrc);
-		CloseHandle(hDst);
-
-		ShellExecute(
-			hWnd,
-			TEXT("open"),
-			tempFile,
-			nullptr,
-			nullptr,
-			SW_SHOWNORMAL
-		);
+		StartFileCopyJob(hInst, job);
 	}
 }
 
@@ -550,10 +479,10 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	}
 	case WM_PROGRESS_DONE:
 	{
+		log("WM_PROGRESS_DONE");
 		EnableWindow(hDlg, TRUE);
-		OutputDebugStringA("WM_PROGRESS_DONE");
-		StreamCopyJob* job = (StreamCopyJob*)lParam;
-		if (!(job->error || job->cancel))
+		FileCopyJob* job = (FileCopyJob*)lParam;
+		if (!(job->failed || job->aborted))
 		{
 			EndDialog(hDlg, 0);
 		}
@@ -607,11 +536,23 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 				Edit_ShowBalloonTip(hEdit, &tip);
 				return TRUE;
 			}
-
 			auto ctx = get_ctx(hDlg);
-			HINSTANCE hInst = ctx->GetResourceInstance();
-			CopyFileToADS_Win32(hInst, hDlg, filePath, ctx->get_path(), streamName);
-			//EndDialog(hDlg, IDOK);
+
+			std::wstringstream ss;
+			ss << ctx->get_path() << ':' << streamName;
+			std::wstring hostFile = ss.str();
+
+			if (CreateStreamIfUserWantsTo(hDlg, hostFile.c_str()))
+			{
+				EnableWindow(hDlg, FALSE);
+
+				FileCopyJob* job = new FileCopyJob();
+				job->id = JOB_CREATE_STREAM;
+				job->from = filePath;
+				job->to = hostFile;
+				job->hWnd = hDlg;
+				StartFileCopyJob(ctx->GetResourceInstance(), job);
+			}
 			return TRUE;
 		}
 		case IDCANCEL:
@@ -629,9 +570,9 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 	case WM_INITDIALOG:
 	{
-		StreamCopyJob* job = (StreamCopyJob*)lParam;
+		FileCopyJob* job = (FileCopyJob*)lParam;
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
-		if (job->done)
+		if (job->finish)
 		{
 			DestroyWindow(hDlg);
 			break;
@@ -649,14 +590,14 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		}
 		else if (wParam == TIMER_PROGRESS_UPDATE)
 		{
-			OutputDebugStringA("progess update");
-			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+			FileCopyJob* job = (FileCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if (job)
 			{
-				int percent = 0;
-				if (job->total > 0)
+				int percent = 100;
+				if (job->TotalFileSize > 0)
 				{
-					percent = (int)((job->written * 100) / job->total);
+					percent = (int)((job->TotalBytesTransferred * 100) / job->TotalFileSize);
+					if (percent > 100) percent = 100;
 				}
 				SendDlgItemMessage(hDlg, IDC_PROGRESS1, PBM_SETPOS, percent, 0);
 			}
@@ -665,11 +606,11 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_PROGRESS_DONE:
 	{
-		OutputDebugStringA("progess WM_PROGRESS_DONE");
-		StreamCopyJob* job = (StreamCopyJob*)lParam;
-		if (job->error)
+		log("progess WM_PROGRESS_DONE");
+		FileCopyJob* job = (FileCopyJob*)lParam;
+		if (job->failed && job->error != ERROR_REQUEST_ABORTED)
 		{
-			PopupError(hDlg, job->code);
+			PopupError(hDlg, job->error);
 		}
 		DestroyWindow(hDlg);
 		return TRUE;
@@ -677,26 +618,26 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 		if (LOWORD(wParam) == IDCANCEL)
 		{
-			OutputDebugStringA("progess IDCANCEL");
-			StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-			job->cancel = true;
+			log("progess IDCANCEL");
+			FileCopyJob* job = (FileCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+			job->aborted = true;
 			return TRUE;
 		}
 		break;
 	case WM_CLOSE:
 	{
-		OutputDebugStringA("progess WM_CLOSE");
-		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-		job->cancel = true;
+		log("progess WM_CLOSE");
+		FileCopyJob* job = (FileCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		job->aborted = true;
 		return TRUE;
 	}
 	case WM_DESTROY:
 	{
-		StreamCopyJob* job = (StreamCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
+		FileCopyJob* job = (FileCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 		if (job)
 		{
 			PostMessage(job->hWnd, WM_PROGRESS_DONE, NULL, (LPARAM)job);
-			OutputDebugStringA("progess WM_DESTROY");
+			log("progess WM_DESTROY");
 		}
 		KillTimer(hDlg, TIMER_PROGRESS_SHOW);
 		KillTimer(hDlg, TIMER_PROGRESS_UPDATE);
@@ -721,7 +662,7 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 	case WM_PAGE_RELOAD:
 	{
 		CAlternateStreamContext* pthis = get_ctx(hWnd);
-		pthis->reload_streams();
+		pthis->read_streams();
 
 		HWND hList = GetDlgItem(hWnd, IDC_LIST);
 		UpdateListView(hList, pthis->m_streams);
@@ -730,6 +671,30 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 		pthis->iItem = iItem;
 		pthis->iSubItem = -1;
 		EnableWindow(GetDlgItem(hWnd, IDC_BTN_DEL), iItem >= 0);
+		return TRUE;
+	}
+	case WM_PROGRESS_DONE:
+	{
+		FileCopyJob* job = (FileCopyJob*)lParam;
+		if (job->failed)
+		{
+			if (job->error != ERROR_REQUEST_ABORTED)
+			{
+				PopupError(hWnd, job->error);
+			}
+		}
+		else if (job->id == JOB_OPEN_FILE)
+		{
+			ShellExecute(
+				hWnd,
+				TEXT("open"),
+				job->to.c_str(),
+				nullptr,
+				nullptr,
+				SW_SHOWNORMAL
+			);
+		}
+		delete job;
 		return TRUE;
 	}
 	case WM_DROPFILES:

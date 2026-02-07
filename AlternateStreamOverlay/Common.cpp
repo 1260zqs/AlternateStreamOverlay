@@ -1,18 +1,7 @@
 #include "stdafx.h"
-#include "altstrm_common.h"
 #include "Common.h"
 
 #pragma comment(lib, "Shlwapi.lib")
-
-bool hasAlternateStreams(LPCWSTR pwszPath)
-{
-	return HasAlternateStreams(pwszPath);
-}
-
-std::vector<FileStreamData> listAlternateStreams(LPCWSTR pwszPath)
-{
-	return ListAlternateStreams(pwszPath);
-}
 
 // Format an integer with the user's thousands separators, e.g. "15,000"
 //static std::wstring FormatIntegerWithGrouping(size_t value)
@@ -33,11 +22,11 @@ std::vector<FileStreamData> listAlternateStreams(LPCWSTR pwszPath)
 std::wstring FormatFileSizeStringKB(size_t bytes)
 {
 	//std::wstringstream ss{};
-	WCHAR sizeBuf[64] = {};
+	TCHAR sizeBuf[64] = {};
 	//WCHAR rawBuf[32] = {};
 	//WCHAR byteBuf[64] = {};
 
-	StrFormatByteSizeW(bytes, sizeBuf, _countof(sizeBuf));
+	StrFormatByteSize(bytes, sizeBuf, std::size(sizeBuf));
 	return std::wstring(sizeBuf);
 	//ss << szieBuf << L" (";
 
@@ -62,16 +51,6 @@ std::wstring FormatFileSizeStringKB(size_t bytes)
 
 	//ss << rawBuf << L" byte)";
 	//return ss.str();
-}
-
-std::wstring FormatFileSizeStringKB(const LARGE_INTEGER& li) {
-	if (li.QuadPart >= 0) {
-		size_t v = static_cast<size_t>(li.QuadPart);
-		if (v <= static_cast<size_t>(std::numeric_limits<std::size_t>::max())) {
-			return FormatFileSizeStringKB(static_cast<size_t>(v));
-		}
-	}
-	return std::wstring{};
 }
 
 HRESULT CopyToClipboard(HGLOBAL hGlobal)

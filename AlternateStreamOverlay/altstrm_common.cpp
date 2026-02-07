@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "altstrm_common.h"
 
 /*
@@ -19,6 +20,28 @@
 
 #include <string>
 #include <sstream>
+
+bool IsOnNTFS(LPCWSTR path)
+{
+	wchar_t volumePath[MAX_PATH]{};
+	if (!GetVolumePathNameW(path, volumePath, MAX_PATH))
+		return false;
+
+	wchar_t fsName[MAX_PATH]{};
+	BOOL ok = GetVolumeInformationW(
+		volumePath,
+		nullptr,
+		0,
+		nullptr,
+		nullptr,
+		nullptr,
+		fsName,
+		MAX_PATH
+	);
+	if (!ok) return false;
+
+	return _wcsicmp(fsName, L"NTFS") == 0;
+}
 
 bool HasAlternateStreams(LPCWSTR path)
 {
@@ -90,8 +113,8 @@ std::vector<FileStreamData> ListAlternateStreams(HANDLE hFile)
 			pStreamInfo->StreamName,
 			pStreamInfo->StreamNameLength / sizeof(WCHAR)
 		);
-		fs.streamSize = pStreamInfo->StreamSize;
-		fs.streamAllocationSize = pStreamInfo->StreamAllocationSize;
+		fs.streamSize = pStreamInfo->StreamSize.QuadPart;
+		fs.streamAllocationSize = pStreamInfo->StreamAllocationSize.QuadPart;
 		list.push_back(std::move(fs));
 
 		if (pStreamInfo->NextEntryOffset == 0) break;

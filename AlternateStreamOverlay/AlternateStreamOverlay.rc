@@ -94,6 +94,17 @@ BEGIN
     PUSHBUTTON      "Cancel",IDCANCEL,191,70,50,16
 END
 
+IDD_DIALOG_RENAME DIALOGEX 0, 0, 227, 55
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Rename"
+FONT 9, "Segoe UI", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,116,33,50,16
+    PUSHBUTTON      "Cancel",IDCANCEL,170,33,50,16
+    LTEXT           "New Name:",IDC_LAB_NEWNAME,7,9,44,10
+    EDITTEXT        IDC_EDIT_NEWNAME_TEX,56,7,163,14,ES_AUTOHSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -118,6 +129,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 86
     END
+
+    IDD_DIALOG_RENAME, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 220
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 48
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -137,6 +156,11 @@ BEGIN
     0
 END
 
+IDD_DIALOG_RENAME AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -147,13 +171,21 @@ STRINGTABLE
 BEGIN
     IDS_STR_STREAM_NAME     "文件名"
     IDS_STR_STREAM_SIZE     "大小"
-    IDS_STR_ADD             "添加"
-    IDS_STR_DEL             "删除"
+    IDS_STR_ADD             "添加(&A)"
+    IDS_STR_DEL             "删除(&D)"
     IDS_STR_OPEN            "打开"
     IDS_STR_SAVE            "保存"
     IDS_STR_STREAM_ALLOCATIONSIZE "占用空间"
     IDS_STR_STREAM          "数据流"
     IDS_STR_DESC            "备用数据流（Alternate Data Streams）是附加在文件上的 NTFS 额外数据，它们不会显示在 Windows 资源管理器中，可能用于存储附加信息。"
+    IDS_STR_NEWNAME         "新名称(&N):"
+    IDS_STR_RENAME          "重命名"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STR_OK              "确定"
+    IDS_STR_CANCEL          "取消"
 END
 
 #endif    // Chinese (Simplified, China) resources
@@ -179,7 +211,7 @@ FONT 9, "Segoe UI", 400, 0, 0x0
 BEGIN
     CONTROL         "",IDC_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | WS_BORDER | WS_TABSTOP,7,58,246,225
     LTEXT           "Alternate data streams are additional NTFS data attached to a file.",IDC_DESC,50,15,203,26
-    ICON            "",IDC_IMAGE,7,10,20,20
+    ICON            "",IDC_IMAGE,7,10,16,13
     PUSHBUTTON      "Add",IDC_BTN_ADD,148,291,50,16
     PUSHBUTTON      "Delete",IDC_BTN_DEL,203,291,50,16
 END
@@ -301,13 +333,21 @@ BEGIN
     IDS_PROJNAME            "AlternateStreamOverlay"
     IDS_STR_STREAM_NAME     "Name"
     IDS_STR_STREAM_SIZE     "Size"
-    IDS_STR_ADD             "Add"
-    IDS_STR_DEL             "Delete"
+    IDS_STR_ADD             "Add(&A)"
+    IDS_STR_DEL             "Delete(&D)"
     IDS_STR_OPEN            "Open"
     IDS_STR_SAVE            "Save"
     IDS_STR_STREAM_ALLOCATIONSIZE "Allocation Size"
     IDS_STR_STREAM          "Streams"
     IDS_STR_DESC            "Alternate data streams are additional NTFS data attached to a file. They are not visible in Windows Explorer and may store extra information."
+    IDS_STR_NEWNAME         "New Name(&N):"
+    IDS_STR_RENAME          "Rename"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_STR_OK              "OK"
+    IDS_STR_CANCEL          "Cancel"
 END
 
 #endif    // English (United States) resources

@@ -17,10 +17,16 @@
 #define IDS_STR_STREAM_ALLOCATIONSIZE   107
 #define IDS_STR_STREAM                  108
 #define IDS_STR_DESC                    109
+#define IDS_STR_NEWNAME                 110
+#define IDS_STR_RENAME                  111
+#define IDS_STR_OK                      112
+#define IDS_STR_CANCEL                  113
 #define IDI_ICON1                       209
 #define IDI_IMAGE1                      209
 #define IDD_DIALOG_ADD_STREAM           210
 #define IDD_DIALOG_PROGRESS             212
+#define IDD_DIALOG1                     214
+#define IDD_DIALOG_RENAME               214
 #define IDC_DESC                        215
 #define IDC_EDIT_NAME                   216
 #define IDC_BTN_CREATE_STREAM           217
@@ -29,6 +35,7 @@
 #define IDC_BUTTON1                     220
 #define IDC_FILE_BROWSER_PATH           221
 #define IDC_EDIT1                       222
+#define IDC_EDIT_NEWNAME_TEX            222
 #define IDC_CHECK1                      223
 #define IDC_CHECK_DEL_SRC               223
 #define IDC_PROGRESS1                   224
@@ -36,6 +43,7 @@
 #define IDC_PROGRESS_TITLE              226
 #define IDC_PROG_ITEM_NAME              227
 #define IDC_PROG_ITEM_REMAIN            228
+#define IDC_LAB_NEWNAME                 229
 #define IDC_BTN_DEL                     10000
 #define IDC_BTN_ADD                     10001
 #define IDC_IMAGE                       10002
@@ -62,9 +70,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        214
+#define _APS_NEXT_RESOURCE_VALUE        216
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         229
+#define _APS_NEXT_CONTROL_VALUE         230
 #define _APS_NEXT_SYMED_VALUE           104
 #endif
 #endif

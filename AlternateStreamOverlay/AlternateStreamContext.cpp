@@ -47,6 +47,7 @@ struct FileCopyJob
 int CALLBACK ListCompareProc(LPARAM lParam1, LPARAM lParam2, LPARAM lUserData);
 INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 INT_PTR CALLBACK ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK RenameDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam);
 void StartFileCopyJob(HINSTANCE hInst, FileCopyJob* job);
 
 #define var auto
@@ -189,7 +190,7 @@ void Command_AddStream(HWND hWnd)
 	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
 	DialogBoxParam(
 		hInst,
-		MAKEINTRESOURCEW(IDD_DIALOG_ADD_STREAM),
+		MAKEINTRESOURCE(IDD_DIALOG_ADD_STREAM),
 		hWnd,
 		AddStreamDlgProc,
 		(LPARAM)get_ctx(hWnd)
@@ -334,6 +335,18 @@ void UpdateListView(HWND hList, const std::vector<FileStreamData>& streams)
 	}
 }
 
+void Command_RenameStream(HWND hWnd)
+{
+	HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hWnd, GWLP_HINSTANCE);
+	DialogBoxParam(
+		hInst,
+		MAKEINTRESOURCE(IDD_DIALOG_RENAME),
+		hWnd,
+		RenameDlgProc,
+		(LPARAM)get_ctx(hWnd)
+	);
+}
+
 void Command_OpenStream(HWND hWnd)
 {
 	auto ctx = get_ctx(hWnd);
@@ -414,7 +427,7 @@ BOOL OnInitDialog(HWND hWnd, LPARAM lParam)
 
 	HICON hIcon = (HICON)LoadImage(
 		ppsp->hInstance,
-		MAKEINTRESOURCEW(IDI_IMAGE1),
+		MAKEINTRESOURCE(IDI_IMAGE1),
 		IMAGE_ICON,
 		64, 64,
 		LR_DEFAULTCOLOR
@@ -481,8 +494,19 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	switch (msg)
 	{
 	case WM_INITDIALOG:
+	{
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+
+		TCHAR szBuffer[MAX_PATH]{};
+		HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
+
+		LoadString(hInst, IDS_STR_OK, szBuffer, std::size(szBuffer));
+		SetWindowText(GetDlgItem(hDlg, IDOK), szBuffer);
+
+		LoadString(hInst, IDS_STR_CANCEL, szBuffer, std::size(szBuffer));
+		SetWindowText(GetDlgItem(hDlg, IDCANCEL), szBuffer);
 		return TRUE;
+	}
 	case WM_NOTIFY:
 	{
 		LPNMHDR hdr = (LPNMHDR)lParam;
@@ -578,6 +602,58 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	return FALSE;
 }
 
+INT_PTR RenameDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (msg)
+	{
+	case WM_INITDIALOG:
+	{
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
+
+		TCHAR szBuffer[MAX_PATH]{};
+		HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
+
+		LoadString(hInst, IDS_STR_RENAME, szBuffer, std::size(szBuffer));
+		SetWindowText(hDlg, szBuffer);
+
+		LoadString(hInst, IDS_STR_NEWNAME, szBuffer, std::size(szBuffer));
+		SetWindowText(GetDlgItem(hDlg, IDC_LAB_NEWNAME), szBuffer);
+
+		LoadString(hInst, IDS_STR_OK, szBuffer, std::size(szBuffer));
+		SetWindowText(GetDlgItem(hDlg, IDOK), szBuffer);
+
+		LoadString(hInst, IDS_STR_CANCEL, szBuffer, std::size(szBuffer));
+		SetWindowText(GetDlgItem(hDlg, IDCANCEL), szBuffer);
+		return TRUE;
+	}
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK)
+		{
+			TCHAR newName[MAX_PATH]{};
+			GetDlgItemText(hDlg, IDC_EDIT_NEWNAME_TEX, newName, std::size(newName));
+			if (!newName[0] || PathCleanupSpec(NULL, newName))
+			{
+				HWND hEdit = GetDlgItem(hDlg, IDC_EDIT_NEWNAME_TEX);
+				EDITBALLOONTIP tip{};
+				tip.cbStruct = sizeof(tip);
+				tip.pszText = TEXT("Bad name");
+				tip.ttiIcon = TTI_ERROR;
+				Edit_ShowBalloonTip(hEdit, &tip);
+				return TRUE;
+			}
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		else if (LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, 0);
+			return TRUE;
+		}
+		break;
+	}
+
+	return FALSE;
+}
 INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
@@ -598,6 +674,12 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			SetDlgItemText(hDlg, IDC_PROG_ITEM_REMAIN, L"");
 			SetDlgItemText(hDlg, IDC_PROGRESS_TEX, L"");
 			SetTimer(hDlg, TIMER_PROGRESS_SHOW, 200, NULL);
+
+			TCHAR szBuffer[MAX_PATH]{};
+			HINSTANCE hInst = (HINSTANCE)GetWindowLongPtr(hDlg, GWLP_HINSTANCE);
+
+			LoadString(hInst, IDS_STR_CANCEL, szBuffer, std::size(szBuffer));
+			SetWindowText(GetDlgItem(hDlg, IDCANCEL), szBuffer);
 		}
 		return TRUE;
 	}
@@ -837,6 +919,7 @@ DLGRETURN CALLBACK PropPageProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 			Command_OpenStream(hWnd);
 			return TRUE;
 		case ID_ITEMMENU_RENAME:
+			Command_RenameStream(hWnd);
 			return TRUE;
 		case ID_ITEMMENU_DELETE:
 			Command_DeleteStream(hWnd);

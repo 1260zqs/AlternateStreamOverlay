@@ -3,6 +3,7 @@
 #include <atlconv.h>
 #include <sstream>
 #include <string>
+#include <format>
 #include <ios>
 #include <commctrl.h>
 #include "Common.h"
@@ -256,6 +257,20 @@ static DWORD CALLBACK JobProgressRoutine(
 static DWORD WINAPI FileCopyJob_WorkerThread(LPVOID param)
 {
 	FileCopyJob* job = (FileCopyJob*)param;
+
+	//job->TotalFileSize = 10000;
+	//job->TotalBytesTransferred = 0;
+	//for (size_t i = 0; i < job->TotalFileSize; i++)
+	//{
+	//	job->TotalBytesTransferred++;
+	//	Sleep(50);
+	//	OutputDebugStringA("progess");
+	//	if (job->aborted)
+	//	{
+	//		break;
+	//	}
+	//}
+
 	BOOL ok = CopyFileEx(
 		job->from.c_str(),
 		job->to.c_str(),
@@ -480,7 +495,7 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 	case WM_PROGRESS_DONE:
 	{
 		log("WM_PROGRESS_DONE");
-		EnableWindow(hDlg, TRUE);
+		//EnableWindow(hDlg, TRUE);
 		FileCopyJob* job = (FileCopyJob*)lParam;
 		if (!(job->failed || job->aborted))
 		{
@@ -544,8 +559,7 @@ INT_PTR CALLBACK AddStreamDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPa
 
 			if (CreateStreamIfUserWantsTo(hDlg, hostFile.c_str()))
 			{
-				EnableWindow(hDlg, FALSE);
-
+				//EnableWindow(hDlg, FALSE);
 				FileCopyJob* job = new FileCopyJob();
 				job->id = JOB_CREATE_STREAM;
 				job->from = filePath;
@@ -577,7 +591,14 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			DestroyWindow(hDlg);
 			break;
 		}
-		SetTimer(hDlg, TIMER_PROGRESS_SHOW, 200, NULL);
+		else 
+		{
+			LPCWSTR fileName = PathFindFileName(job->from.c_str());
+			SetDlgItemText(hDlg, IDC_PROG_ITEM_NAME, fileName);
+			SetDlgItemText(hDlg, IDC_PROG_ITEM_REMAIN, L"");
+			SetDlgItemText(hDlg, IDC_PROGRESS_TEX, L"");
+			SetTimer(hDlg, TIMER_PROGRESS_SHOW, 200, NULL);
+		}
 		return TRUE;
 	}
 	case WM_TIMER:
@@ -593,11 +614,21 @@ INT_PTR ProgressDlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 			FileCopyJob* job = (FileCopyJob*)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if (job)
 			{
-				int percent = 100;
+				int percent = 0;
 				if (job->TotalFileSize > 0)
 				{
 					percent = (int)((job->TotalBytesTransferred * 100) / job->TotalFileSize);
 					if (percent > 100) percent = 100;
+
+					{
+						std::wstring text = std::format(L"Complete {}%", percent);
+						SetDlgItemText(hDlg, IDC_PROGRESS_TEX, text.c_str());
+					}
+					{
+						size_t bytes = job->TotalFileSize - job->TotalBytesTransferred;
+						std::wstring text = FormatFileSizeStringKB(bytes);
+						SetDlgItemText(hDlg, IDC_PROG_ITEM_REMAIN, text.c_str());
+					}
 				}
 				SendDlgItemMessage(hDlg, IDC_PROGRESS1, PBM_SETPOS, percent, 0);
 			}

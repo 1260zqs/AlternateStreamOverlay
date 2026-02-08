@@ -32,6 +32,10 @@
 #define IDC_CHECK1                      223
 #define IDC_CHECK_DEL_SRC               223
 #define IDC_PROGRESS1                   224
+#define IDC_PROGRESS_TEX                225
+#define IDC_PROGRESS_TITLE              226
+#define IDC_PROG_ITEM_NAME              227
+#define IDC_PROG_ITEM_REMAIN            228
 #define IDC_BTN_DEL                     10000
 #define IDC_BTN_ADD                     10001
 #define IDC_IMAGE                       10002
@@ -60,7 +64,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        214
 #define _APS_NEXT_COMMAND_VALUE         32790
-#define _APS_NEXT_CONTROL_VALUE         225
+#define _APS_NEXT_CONTROL_VALUE         229
 #define _APS_NEXT_SYMED_VALUE           104
 #endif
 #endif
